@@ -1,20 +1,24 @@
 import math
+from copy import deepcopy
+
+from params import F, PRF, Tlen
 
 #Algorhitmus 1 (Computes 𝑙𝑒𝑛2)
 def gen_len2(n, lg_w): #Input: Security parameter 𝑛, bits per hash chain 𝑙𝑔_𝑤
-    w = 2 ** lg_w                               #Compute w: w = 2^lg_w
-    len1 = math.ceil((8 * n + lg_w - 1) / lg_w) #Compute len1
-    max_checksum = len1 * (w - 1)               #Compute maximum possible checksum value
-    len2 = 1                                    #Initialize len2
-    capacity = w                                #Initialize capacity
+    w = 2 ** lg_w                                #Compute w: w = 2^lg_w
+    len1 = math.floor((8 * n + lg_w - 1) / lg_w) #Compute len1
+    max_checksum = len1 * (w - 1)                #Compute maximum possible checksum value
+    len2 = 1                                     #Initialize len2
+    capacity = w                                 #Initialize capacity
 
-    while capacity <= max_checksum:             #Loop until capacity exceeds max_checksum
+    while capacity <= max_checksum:              #Loop until capacity exceeds max_checksum
         len2 += 1
         capacity *= w
 
-    return len2                                 #Output: 𝑙𝑒𝑛2
+    return len2                                  #Output: 𝑙𝑒𝑛2
 
 #Algorithmus 2 (Converts a byte string to an integer)
+# NOTE we can either leave this separate or take it from the ADRS class
 def toInt(X, n):                                #Input: 𝑛-byte string 𝑋
     total = 0
     for i in range(n):
@@ -22,6 +26,7 @@ def toInt(X, n):                                #Input: 𝑛-byte string 𝑋
     return total                                #Output: Integer value of 𝑋
 
 #Algorithmus 3 (Converts an integer to a byte string)
+# NOTE we can either leave this separate or take it from the ADRS class
 def toByte(x, n):                               #Input: Integer 𝑥, string length 𝑛
     total = x                                   #Initialize total to x
     S = [0] * n                                 #Create an array of size n to store the byte string
@@ -59,7 +64,7 @@ def chain(X, i, s, PK_seed, ADRS):              #Input: Input string 𝑋, start
 
 #Algorithmus 6 (Generates a WOTS+ public key)
 def wots_pkGen(SK_seed, PK_seed, ADRS):         #Input: Secret seed SK.seed, public seed PK.seed, address ADRS
-    skADRS = ADRS.copy()                        # Copy address to create key generation key address
+    skADRS = deepcopy(ADRS)                     # Copy address to create key generation key address
     skADRS.setTypeAndClear(WOTS_PRF)
     skADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 
@@ -70,7 +75,7 @@ def wots_pkGen(SK_seed, PK_seed, ADRS):         #Input: Secret seed SK.seed, pub
         ADRS.setChainAddress(i)
         tmp.append(chain(sk, 0, w - 1, PK_seed, ADRS))  # Compute public value for chain i
 
-    wotspkADRS = ADRS.copy()                    # Copy address to create WOTS+ public key address
+    wotspkADRS = deepcopy(ADRS)                 # Copy address to create WOTS+ public key address
     wotspkADRS.setTypeAndClear(WOTS_PK)
     wotspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 
@@ -80,14 +85,14 @@ def wots_pkGen(SK_seed, PK_seed, ADRS):         #Input: Secret seed SK.seed, pub
 #Algorithmus 7 (Generates a WOTS+ signature on an n-byte message)
 def wots_sign(M, SK_seed, PK_seed, ADRS):       #Input: Message 𝑀, secret seed SK.seed, public seed PK.seed, address ADRS
     csum = 0
-    msg = base_2w(M, lg_w, len1)                # Convert message to base w
+    msg = base_2b(M, lg_w, len1)                # Convert message to base w
     for i in range(len1):
         csum += w - 1 - msg[i]                  # Compute checksum
 
     csum <<= (8 - ((len1 * lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
-    msg += msg + base_2w(toByte(csum, len1 * lg_w), lg_w, len2)  # Convert to base w
+    msg += msg + base_2b(toByte(csum, math.ceil((len2 * lg_w) / 8)), lg_w, len2)  # Convert to base w
 
-    skADRS = ADRS.copy()                        # Copy address to create key generation key address
+    skADRS = deepcopy(ADRS)                     # Copy address to create key generation key address
     skADRS.setTypeAndClear(WOTS_PRF)
     skADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 
@@ -103,18 +108,21 @@ def wots_sign(M, SK_seed, PK_seed, ADRS):       #Input: Message 𝑀, secret see
 #Algorithmus 8 (Computes a WOTS+ public key from a message and its signature)
 def wots_pkFromSig(sig, M, PK_seed, ADRS):      #Input: WOTS+ signature 𝑠𝑖𝑔, message 𝑀, public seed PK.seed, address ADRS
     csum = 0
-    msg = base_2w(M, lg_w, len1)                # Konvertiere Nachricht in Basis w
+    msg = base_2b(M, lg_w, len1)                # Konvertiere Nachricht in Basis w
     for i in range(len1):
         csum += w - 1 - msg[i]                  # Berechne Prüfsumme
 
-    csum <<= (8 - ((len1 * lg_w) % 8)) % 8      # Für lg_w = 4, shift um 4 nach links
-    msg += msg + base_2w(toByte(csum, len1 * lg_w), lg_w, len2)  # Konvertiere in Basis w
+    csum <<= (8 - ((len2 * lg_w) % 8)) % 8      # Für lg_w = 4, shift um 4 nach links
+    msg += msg + base_2b(toByte(csum, math.ceil((len2 * lg_w) / 8)), lg_w, len2)  # Konvertiere in Basis w
 
-    for i in range(len2):
+    tmp = []
+    # FIXME check if len = len1 + len2
+    # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L30
+    for i in range(len1 + len2):
         ADRS.setChainAddress(i)
-        tmp[i] = chain(sig[i], msg[i], w - 1 - msg[i], PK_seed, ADRS)
+        tmp.append(chain(sig[i], msg[i], w - 1 - msg[i], PK_seed, ADRS))
 
-    wotspkADRS = ADRS.copy()                    # Kopiere Adresse, um WOTS+ öffentlichen Schlüssel zu erstellen
+    wotspkADRS = deepcopy(ADRS)                 # Kopiere Adresse, um WOTS+ öffentlichen Schlüssel zu erstellen
     wotspkADRS.setTypeAndClear(WOTS_PK)
     wotspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 

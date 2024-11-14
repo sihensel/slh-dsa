@@ -27,7 +27,7 @@ class ADRS:
         total = x
         S = [0 for _ in range(n)]
         for i in range(n):
-            S[n-1-i] = total % 256
+            S[n - 1 - i] = total % 256
             total = total >> 8
         return S
 

@@ -1,15 +1,9 @@
 import math
+from copy import deepcopy
 
 from adrs import ADRS
-
-# ADRS types
-WOTS_HASH = 0
-WOTS_PK = 1
-TREE = 2
-FORS_TREE = 3
-FORS_ROOTS = 4
-WOTS_PRF = 5
-FORS_PRF = 6
+# FIXME importing everything with out prefix is not a good solution
+from params import *
 
 
 # algorithm 9
@@ -196,7 +190,7 @@ def fors_skGen(sk_seed, pk_seed, adrs: ADRS, idx):
         n-byte FORS private key
     """
 
-    sk_adrs = adrs
+    sk_adrs = deepcopy(adrs)
     sk_adrs.setTypeAndClear(FORS_PRF)
     sk_adrs.setKeyPairAddress(adrs.getKeyPairAddress())
     sk_adrs.setTreeIndex(idx)
