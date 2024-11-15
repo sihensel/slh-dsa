@@ -1,7 +1,8 @@
 import math
 from copy import deepcopy
 
-from params import F, PRF, Tlen
+from adrs import ADRS
+from params import Params, Tlen, PRF, F
 
 #Algorhitmus 1 (Computes 𝑙𝑒𝑛2)
 def gen_len2(n, lg_w): #Input: Security parameter 𝑛, bits per hash chain 𝑙𝑔_𝑤
@@ -54,77 +55,95 @@ def base_2b(X, b, out_len):                     #Input: Byte string 𝑋 of leng
     return baseb                                #Output: Array of 𝑜𝑢𝑡_𝑙𝑒𝑛 integers in the range [0, … , 2𝑏 − 1]
 
 #Algorithmus 5 (Chaining function used in WOTS+)
-def chain(X, i, s, PK_seed, ADRS):              #Input: Input string 𝑋, start index 𝑖, number of steps 𝑠, public seed PK.seed, address ADRS
+def chain(X, i, s, PK_seed, adrs: ADRS):              #Input: Input string 𝑋, start index 𝑖, number of steps 𝑠, public seed PK.seed, address ADRS
     tmp = X
     for j in range(i, i + s):
-        ADRS.setHashAddress(j)
-        tmp = F(PK_seed, ADRS, tmp)
+        adrs.setHashAddress(j)
+        tmp = F(PK_seed, adrs, tmp)
 
     return tmp                                  #Output: Value of F iterated 𝑠 times on 𝑋
 
 #Algorithmus 6 (Generates a WOTS+ public key)
-def wots_pkGen(SK_seed, PK_seed, ADRS):         #Input: Secret seed SK.seed, public seed PK.seed, address ADRS
-    skADRS = deepcopy(ADRS)                     # Copy address to create key generation key address
-    skADRS.setTypeAndClear(WOTS_PRF)
-    skADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
+def wots_pkGen(SK_seed, PK_seed, adrs: ADRS):         #Input: Secret seed SK.seed, public seed PK.seed, address ADRS
+    skADRS = deepcopy(adrs)                     # Copy address to create key generation key address
+    skADRS.setTypeAndClear(Params.WOTS_PRF)
+    skADRS.setKeyPairAddress(adrs.getKeyPairAddress())
 
     tmp = []
-    for i in range(len):
+    for i in range(Params.len):
         skADRS.setChainAddress(i)
         sk = PRF(PK_seed, SK_seed, skADRS)      # Compute secret value for chain i
-        ADRS.setChainAddress(i)
-        tmp.append(chain(sk, 0, w - 1, PK_seed, ADRS))  # Compute public value for chain i
+        adrs.setChainAddress(i)
+        tmp.append(chain(sk, 0, Params.w - 1, PK_seed, adrs))  # Compute public value for chain i
 
-    wotspkADRS = deepcopy(ADRS)                 # Copy address to create WOTS+ public key address
-    wotspkADRS.setTypeAndClear(WOTS_PK)
-    wotspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
+    wotspkADRS = deepcopy(adrs)                 # Copy address to create WOTS+ public key address
+    wotspkADRS.setTypeAndClear(Params.WOTS_PK)
+    wotspkADRS.setKeyPairAddress(adrs.getKeyPairAddress())
 
     pk = Tlen(PK_seed, wotspkADRS, tmp)         # Compress public key
     return pk                                   #Output: WOTS+ public key 𝑝𝑘
 
 #Algorithmus 7 (Generates a WOTS+ signature on an n-byte message)
-def wots_sign(M, SK_seed, PK_seed, ADRS):       #Input: Message 𝑀, secret seed SK.seed, public seed PK.seed, address ADRS
+def wots_sign(M, SK_seed, PK_seed, adrs: ADRS):       #Input: Message 𝑀, secret seed SK.seed, public seed PK.seed, address ADRS
     csum = 0
-    msg = base_2b(M, lg_w, len1)                # Convert message to base w
-    for i in range(len1):
-        csum += w - 1 - msg[i]                  # Compute checksum
+    msg = base_2b(M, Params.lg_w, Params.len1)                # Convert message to base w
+    for i in range(Params.len1):
+        csum += Params.w - 1 - msg[i]                  # Compute checksum
 
-    csum <<= (8 - ((len1 * lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
-    msg += msg + base_2b(toByte(csum, math.ceil((len2 * lg_w) / 8)), lg_w, len2)  # Convert to base w
+    csum <<= (8 - ((Params.len1 * Params.lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
+    msg += base_2b(toByte(csum, math.ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Convert to base w
 
-    skADRS = deepcopy(ADRS)                     # Copy address to create key generation key address
-    skADRS.setTypeAndClear(WOTS_PRF)
-    skADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
+    skADRS = deepcopy(adrs)                     # Copy address to create key generation key address
+    skADRS.setTypeAndClear(Params.WOTS_PRF)
+    skADRS.setKeyPairAddress(adrs.getKeyPairAddress())
 
     sig = []
-    for i in range(len2):
+    for i in range(Params.len):
         skADRS.setChainAddress(i)
         sk = PRF(PK_seed, SK_seed, skADRS)      # Compute chain i secret value
-        ADRS.setChainAddress(i)
-        sig.append(chain(sk, 0, msg[i], PK_seed, ADRS))  # Compute chain i signature value
+        adrs.setChainAddress(i)
+        sig.append(chain(sk, 0, msg[i], PK_seed, adrs))  # Compute chain i signature value
 
     return sig                                  #Output: WOTS+ signature 𝑠𝑖𝑔
 
 #Algorithmus 8 (Computes a WOTS+ public key from a message and its signature)
-def wots_pkFromSig(sig, M, PK_seed, ADRS):      #Input: WOTS+ signature 𝑠𝑖𝑔, message 𝑀, public seed PK.seed, address ADRS
+def wots_pkFromSig(sig, M, PK_seed, adrs: ADRS):      #Input: WOTS+ signature 𝑠𝑖𝑔, message 𝑀, public seed PK.seed, address ADRS
     csum = 0
-    msg = base_2b(M, lg_w, len1)                # Konvertiere Nachricht in Basis w
-    for i in range(len1):
-        csum += w - 1 - msg[i]                  # Berechne Prüfsumme
+    msg = base_2b(M, Params.lg_w, Params.len1)                # Konvertiere Nachricht in Basis w
+    for i in range(Params.len1):
+        csum += Params.w - 1 - msg[i]                  # Berechne Prüfsumme
 
-    csum <<= (8 - ((len2 * lg_w) % 8)) % 8      # Für lg_w = 4, shift um 4 nach links
-    msg += msg + base_2b(toByte(csum, math.ceil((len2 * lg_w) / 8)), lg_w, len2)  # Konvertiere in Basis w
+    csum <<= (8 - ((Params.len2 * Params.lg_w) % 8)) % 8      # Für lg_w = 4, shift um 4 nach links
+    msg += base_2b(toByte(csum, math.ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Konvertiere in Basis w
 
-    tmp = []
-    # FIXME check if len = len1 + len2
-    # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L30
-    for i in range(len1 + len2):
-        ADRS.setChainAddress(i)
-        tmp.append(chain(sig[i], msg[i], w - 1 - msg[i], PK_seed, ADRS))
+    tmp = [0] * Params.len
+    for i in range(Params.len):
+        adrs.setChainAddress(i)
+        tmp[i] = chain(sig[i], msg[i], Params.w - 1 - msg[i], PK_seed, adrs)
 
-    wotspkADRS = deepcopy(ADRS)                 # Kopiere Adresse, um WOTS+ öffentlichen Schlüssel zu erstellen
-    wotspkADRS.setTypeAndClear(WOTS_PK)
-    wotspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
+    wotspkADRS = deepcopy(adrs)                 # Kopiere Adresse, um WOTS+ öffentlichen Schlüssel zu erstellen
+    wotspkADRS.setTypeAndClear(Params.WOTS_PK)
+    wotspkADRS.setKeyPairAddress(adrs.getKeyPairAddress())
 
     pksig = Tlen(PK_seed, wotspkADRS, tmp)
     return pksig                                #Output: WOTS+ public key 𝑝𝑘𝑠𝑖𝑔 derived from 𝑠𝑖𝑔
+
+
+# test WOTS+ functionality, data is chosen arbitrarily
+# can be removed later
+sk_seed = [10]
+pk_seed = [12]
+adrs = ADRS()
+M = [15] * 16
+
+wots_pk = wots_pkGen(sk_seed, pk_seed, adrs)
+# print("wots_pk\n", wots_pk)
+
+sig = wots_sign(M, sk_seed, pk_seed, adrs)
+# print("\nsig\n", sig)
+
+wots_pk_from_sig = wots_pkFromSig(sig, M, pk_seed, adrs)
+# print("\nwots_pkFromSig\n", wots_pk_from_sig)
+
+if wots_pk == wots_pk_from_sig:
+    print(True)

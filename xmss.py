@@ -2,8 +2,8 @@ import math
 from copy import deepcopy
 
 from adrs import ADRS
-# FIXME importing everything with out prefix is not a good solution
-from params import *
+from params import Params, H, PRF
+from wots import wots_pkGen, wots_sign, wots_pkFromSig
 
 
 # algorithm 9
@@ -20,13 +20,13 @@ def xmss_node(sk_seed, i: int, z: int, pk_seed, adrs: ADRS):
         n-byte root node
     """
     if z == 0:
-        adrs.setTypeAndClear(WOTS_HASH)
+        adrs.setTypeAndClear(Params.WOTS_HASH)
         adrs.setKeyPairAddress(i)
         node = wots_pkGen(sk_seed, pk_seed, adrs)
     else:
         lnode = xmss_node(sk_seed, i * 2,     z - 1, pk_seed, adrs)
         rnode = xmss_node(sk_seed, i * 2 + 1, z - 1, pk_seed, adrs)
-        adrs.setTypeAndClear(TREE)
+        adrs.setTypeAndClear(Params.TREE)
         adrs.setTreeHeight(z)
         adrs.setTreeIndex(i)
         node = H(pk_seed, adrs, lnode + rnode)
@@ -47,16 +47,15 @@ def xmss_sign(M, sk_seed, idx: int, pk_seed, adrs: ADRS):
     Returns:
         xmss signature
     """
-    # h = tree height, where to get this from?
-    AUTH = [0 for _ in range(h)]
-    for j in range(h):
-        k = math.floor(idx / 2 ** j) ^ 1
+    AUTH = [0] * Params.h_
+    for j in range(Params.h_):
+        k = math.floor(idx / (2 ** j)) ^ 1
         # alternative:
         # k = (idx >> )j ^ 1
         # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L241
         AUTH[j] = xmss_node(sk_seed, k, j, pk_seed, adrs)
 
-    adrs.setTypeAndClear(WOTS_HASH)
+    adrs.setTypeAndClear(Params.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
     sig = wots_sign(M, sk_seed, pk_seed, adrs)
     sig_xmss = sig + AUTH
@@ -78,17 +77,17 @@ def xmss_pkFromSig(idx: int, sig_xmss, M, pk_seed, adrs: ADRS):
         n-byte root value node[0]
     """
     node = [0, 0]
-    adrs.setTypeAndClear(WOTS_HASH)
+    adrs.setTypeAndClear(Params.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
     # NOTE sig_xmss is a list
     # either create a class for it or make a function that slices the list
     sig = sig_xmss.getWOTSSig()
     AUTH = sig_xmss.getXMSSAUTH()
     node[0] = wots_pkFromSig(sig, M, pk_seed, adrs)
-    adrs.setTypeAndClear(TREE)
+    adrs.setTypeAndClear(Params.TREE)
     adrs.setTreeIndex(idx)
 
-    for k in range(h):
+    for k in range(Params.h_):
         adrs.setTreeHeight(k + 1)
         if math.floor(idx / 2 ** k) % 2 == 0:
         # alternative
@@ -124,17 +123,16 @@ def ht_sign(M, sk_seed, pk_seed, idx_tree, idx_leaf):
     sig_ht = sig_tmp
     root = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
-    # FIXME check out where d and h (h') are coming from
-    for j in range(1, d):
-        idx_leaf = idx_tree % (s ** h)
-        idx_tree = idx_tree >> h
+    for j in range(1, Params.d):
+        idx_leaf = idx_tree % (2 ** Params.h_)
+        idx_tree = idx_tree >> Params.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
         sig_tmp = xmss_sign(root, sk_seed, idx_leaf, pk_seed, adrs)
         # sig_tmp and sig_ht are probably lists
         sig_ht += sig_tmp
 
-        if j < d - 1:
+        if j < Params.d - 1:
             root = xmss_pkFromSig(idx_leaf, sig_tmp, root, pk_seed, adrs)
 
     return sig_ht
@@ -162,10 +160,9 @@ def ht_verify(M, sig_ht, pk_seed, idx_tree, idx_leaf, pk_root):
     sig_tmp = sig_ht.getXMSSSignature(0)
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
-    # FIXME check out where d and h (which is actually h') are coming from
-    for j in range(1, d):
-        idx_leaf = idx_tree % (2 ** h)
-        idx_tree = idx_tree >> h
+    for j in range(1, Params.d):
+        idx_leaf = idx_tree % (2 ** Params.h_)
+        idx_tree = idx_tree >> Params.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
         sig_tmp = sig_ht.getXMSSSignature(j)
@@ -189,10 +186,8 @@ def fors_skGen(sk_seed, pk_seed, adrs: ADRS, idx):
     Returns:
         n-byte FORS private key
     """
-
     sk_adrs = deepcopy(adrs)
-    sk_adrs.setTypeAndClear(FORS_PRF)
+    sk_adrs.setTypeAndClear(Params.FORS_PRF)
     sk_adrs.setKeyPairAddress(adrs.getKeyPairAddress())
     sk_adrs.setTreeIndex(idx)
-    # FIXME find out how PRF is defined
     return PRF(pk_seed, sk_seed, adrs)
