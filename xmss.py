@@ -63,7 +63,7 @@ def xmss_sign(M, sk_seed, idx: int, pk_seed, adrs: ADRS):
 
 
 # algorithm 11
-def xmss_pkFromSig(idx: int, sig_xmss, M, pk_seed, adrs: ADRS):
+def xmss_pkFromSig(idx: int, sig_xmss: list , M, pk_seed, adrs: ADRS):
     """
     Computes an XMSS public key from an XMSS signature
 
@@ -79,10 +79,10 @@ def xmss_pkFromSig(idx: int, sig_xmss, M, pk_seed, adrs: ADRS):
     node = [0, 0]
     adrs.setTypeAndClear(Params.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
-    # NOTE sig_xmss is a list
-    # either create a class for it or make a function that slices the list
-    sig = sig_xmss.getWOTSSig()
-    AUTH = sig_xmss.getXMSSAUTH()
+
+    sig = getWOTSSig(sig_xmss)
+    AUTH = getXMSSAUTH(sig_xmss)
+
     node[0] = wots_pkFromSig(sig, M, pk_seed, adrs)
     adrs.setTypeAndClear(Params.TREE)
     adrs.setTreeIndex(idx)
@@ -92,14 +92,43 @@ def xmss_pkFromSig(idx: int, sig_xmss, M, pk_seed, adrs: ADRS):
         if math.floor(idx / 2 ** k) % 2 == 0:
         # alternative
         # if ((idx >> k) & 1) == 0:
-            adrs.setTreeIndex(adrs.getTreeIndex() / 2)
+            adrs.setTreeIndex(int(adrs.getTreeIndex() / 2))
             node[1] = H(pk_seed, adrs, node[0] + AUTH[k])
         else:
-            adrs.setTreeIndex((adrs.getTreeIndex() - 1) / 2)
+            adrs.setTreeIndex(int((adrs.getTreeIndex() - 1) / 2))
             node[1] = H(pk_seed, adrs, AUTH[k] + node[0])
-        node [0] = node[1]
-
+        node[0] = node[1]
     return node[0]
+
+
+def getWOTSSig(sig_xmss: list):
+    """
+    Returns the WOTS+ signature of a XMSS signature
+    The WOTS+ signature always has len elements
+    """
+    return sig_xmss[0:Params.len]
+
+
+def getXMSSAUTH(sig_xmss: list):
+    """
+    Returns the authentication path of a XMSS signature
+    The authentication path consists of h' elements
+    """
+    return sig_xmss[Params.len:Params.len + Params.h_]
+
+
+def getXMSSSignature(sig_ht: list, idx: int):
+    """
+    Get one XMSS signature (WOTS+ sig and authentication path) from a hypertree signature
+    Params:
+        sig_ht: hypertree signature
+        idx:    index of the XMSS signature in sig_ht
+    """
+    # hypertree signatures contain d XMSS signatures
+    # each XMSS signature is len + h' elements
+    start = idx * (Params.len + Params.h_)
+    end = (idx + 1) * (Params.len + Params.h_)
+    return sig_ht[start:end]
 
 
 # algorithm 12
@@ -114,13 +143,13 @@ def ht_sign(M, sk_seed, pk_seed, idx_tree, idx_leaf):
         idx_tree    tree index
         idx_leaf    leaf index
     Returns:
-        signature of the hypertree
+        signature of the hypertree with h + d * len elements
     """
     adrs = ADRS()
     adrs.setTreeAddress(idx_tree)
 
     sig_tmp = xmss_sign(M, sk_seed, idx_leaf, pk_seed, adrs)
-    sig_ht = sig_tmp
+    sig_ht = deepcopy(sig_tmp)
     root = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, Params.d):
@@ -129,12 +158,10 @@ def ht_sign(M, sk_seed, pk_seed, idx_tree, idx_leaf):
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
         sig_tmp = xmss_sign(root, sk_seed, idx_leaf, pk_seed, adrs)
-        # sig_tmp and sig_ht are probably lists
         sig_ht += sig_tmp
 
         if j < Params.d - 1:
             root = xmss_pkFromSig(idx_leaf, sig_tmp, root, pk_seed, adrs)
-
     return sig_ht
 
 
@@ -155,9 +182,7 @@ def ht_verify(M, sig_ht, pk_seed, idx_tree, idx_leaf, pk_root):
     """
     adrs = ADRS()
     adrs.setTreeAddress(idx_tree)
-    # either sig_ht is an object or getXMSSSignature needs to be a static function
-    # either way sig_ht is essentially a list and getXMSSSignature does list slicing
-    sig_tmp = sig_ht.getXMSSSignature(0)
+    sig_tmp = getXMSSSignature(sig_ht, 0)
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, Params.d):
@@ -165,7 +190,7 @@ def ht_verify(M, sig_ht, pk_seed, idx_tree, idx_leaf, pk_root):
         idx_tree = idx_tree >> Params.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
-        sig_tmp = sig_ht.getXMSSSignature(j)
+        sig_tmp = getXMSSSignature(sig_ht, j)
         node = xmss_pkFromSig(idx_leaf, sig_tmp, node, pk_seed, adrs)
 
     if node == pk_root:

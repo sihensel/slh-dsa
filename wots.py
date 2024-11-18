@@ -127,23 +127,3 @@ def wots_pkFromSig(sig, M, PK_seed, adrs: ADRS):      #Input: WOTS+ signature �
 
     pksig = Tlen(PK_seed, wotspkADRS, tmp)
     return pksig                                #Output: WOTS+ public key 𝑝𝑘𝑠𝑖𝑔 derived from 𝑠𝑖𝑔
-
-
-# test WOTS+ functionality, data is chosen arbitrarily
-# can be removed later
-sk_seed = [10]
-pk_seed = [12]
-adrs = ADRS()
-M = [15] * 16
-
-wots_pk = wots_pkGen(sk_seed, pk_seed, adrs)
-# print("wots_pk\n", wots_pk)
-
-sig = wots_sign(M, sk_seed, pk_seed, adrs)
-# print("\nsig\n", sig)
-
-wots_pk_from_sig = wots_pkFromSig(sig, M, pk_seed, adrs)
-# print("\nwots_pkFromSig\n", wots_pk_from_sig)
-
-if wots_pk == wots_pk_from_sig:
-    print(True)

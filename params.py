@@ -39,7 +39,7 @@ def shake256(*data, out_len):
         # check if the item is a list of ints or bytes
         match type(item[0]):
             case 'int':
-                h.update(bytearray(i))
+                h.update(bytearray(item))
             case 'bytes':
                 h.update(item)
     return h.digest(out_len)
