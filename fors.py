@@ -1,4 +1,5 @@
 from copy import deepcopy
+from math import floor
 
 from adrs import ADRS
 from params import Params, PRF, H, F, Tlen
@@ -41,24 +42,24 @@ def fors_node(SK_seed, i, z, PK_seed, ADRS):    #Input: Secret seed SK.seed, tar
         ADRS.setTreeIndex(i)
 
         concatenated_nodes = lnode + rnode
-        node = H(PK_seed, ADRS.to_bytes(), concatenated_nodes)
+        node = H(PK_seed, ADRS, concatenated_nodes)
 
     return node                                 #Output: 𝑛-byte root 𝑛𝑜𝑑𝑒
 
 #Algorithmus 16 (Generates a FORS signature)
 def fors_sign(md, SK_seed, PK_seed, ADRS):      #Input: Message digest 𝑚𝑑, secret seed SK.seed, address ADRS, public seed PK.seed
 
-    SIG_FORS = b''                              # Initialize SIG_FORS as an empty byte string
+    SIG_FORS = []                              # Initialize SIG_FORS as an empty byte string
     indices = base_2b(md, Params.a, Params.k)                 # Compute indices using base_2b function
 
     for i in range(Params.k):
         SIG_FORS += fors_skGen(SK_seed, PK_seed, ADRS, i * 2**Params.a + indices[i])   # Compute signature elements
 
-        s = indices[i] // 2**Params.a + 1              # Compute auth path
         AUTH = []
         for j in range(Params.a):
-            AUTH.append(fors_node(SK_seed, i * 2**(Params.a - 1) + s, j, PK_seed, ADRS))
-        SIG_FORS += b''.join(AUTH)
+            s = floor(indices[i] / 2 ** j) ^ 1              # Compute auth path
+            AUTH.append(fors_node(SK_seed, i * 2**(Params.a - j) + s, j, PK_seed, ADRS))
+        SIG_FORS += AUTH
 
     return SIG_FORS                             # Output: FORS signature SIG𝐹 𝑂𝑅𝑆
 
@@ -67,15 +68,17 @@ def fors_pkFromSig(SIG_FORS, md, PK_seed, ADRS):    # Input: FORS signature SIG�
 
     indices = base_2b(md, Params.a, Params.k)
     root = []
+    node = [0, 0]
 
     for i in range(Params.k):
         sk = SIG_FORS[i * (Params.a + 1) * Params.n:(i * (Params.a + 1) + 1) * Params.n]    # Compute leaf
         ADRS.setTreeHeight(0)
         ADRS.setTreeIndex(i * 2**Params.a + indices[i])
-        node = [F(PK_seed, ADRS, sk)]
+        node[0] = F(PK_seed, ADRS, sk)
 
         auth = SIG_FORS[(i * (Params.a + 1) + 1) * Params.n:(i + 1) * (Params.a + 1) * Params.n]    # Compute root from leaf and AUTH
         for j in range(Params.a):
+            ADRS.setTreeHeight(j + 1)
             if indices[i] // 2**j % 2 == 0:
                 ADRS.setTreeIndex(ADRS.getTreeIndex() // 2)
 
@@ -85,13 +88,13 @@ def fors_pkFromSig(SIG_FORS, md, PK_seed, ADRS):    # Input: FORS signature SIG�
                 ADRS.setTreeIndex((ADRS.getTreeIndex() - 1) // 2)
 
                 concatenated_input = auth[j] + node[0]  # Concatenate node[0] and auth[j]
-                node[1] = H(PK_seed, ADRS,concatenated_input)  # Compute H(PK_seed, ADRS, node[0] || auth[j]) and store it in node[1]
+                node[1] = H(PK_seed, ADRS, concatenated_input)  # Compute H(PK_seed, ADRS, node[0] || auth[j]) and store it in node[1]
 
             node[0] = node[1]
 
         root[i] = node[0]
 
-    forspkADRS = ADRS.copy()                    # Copy address to create a FORS public-key address
+    forspkADRS = deepcopy(ADRS)                    # Copy address to create a FORS public-key address
     forspkADRS.setTypeAndClear(Params.FORS_ROOTS)
     forspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 

@@ -1,15 +1,17 @@
 import secrets
 import hashlib
 
-n = 16
+from internal import slh_keygen_internal, slh_sign_internal, slh_verify_internal
+from params import Params
+from wots import toByte
 
 # Algorithmus 21 (Generates an SLH-DSA key pair)
-def slh_keygen(n):
+def slh_keygen():
 
     # Generate random seeds
-    SK_seed = secrets.token_bytes(n)
-    SK_prf = secrets.token_bytes(n)
-    PK_seed = secrets.token_bytes(n)
+    SK_seed = secrets.token_bytes(Params.n)
+    SK_prf = secrets.token_bytes(Params.n)
+    PK_seed = secrets.token_bytes(Params.n)
 
     # Check for errors
     if not SK_seed or not SK_prf or not PK_seed:
@@ -24,11 +26,12 @@ def slh_sign(M, ctx, SK):           # Input: Message 𝑀, context string 𝑐�
     if len(ctx) > 255:
         return None
 
-    addrnd = secrets.token_bytes(n)  # Skip for deterministic variant
+    addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
     if addrnd is None:
         return None
 
-    M_prime = b'\x00' + bytes([len(ctx)]) + ctx + M
+    # M_prime = b'\x00' + bytes([len(ctx)]) + ctx + M
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
 
     SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
 
@@ -40,7 +43,7 @@ def slh_hash_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐�
     if len(ctx) > 255:
         return None
 
-    addrnd = secrets.token_bytes(n)  # Skip for deterministic variant
+    addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
     if addrnd is None:
         return None
 
@@ -98,3 +101,10 @@ def slh_hash_verify(M, SIG, ctx, PH, PK):   # Input: Message 𝑀, signature SIG
     M_prime = b'\x01' + bytes([len(ctx)]) + ctx + PHM
 
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
+
+
+# test data
+M = [10, 12, 15]
+ctx = [0]
+SK, PK = slh_keygen()
+sig = slh_sign(M, ctx, SK)

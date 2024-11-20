@@ -34,14 +34,21 @@ class Params:
 
 # wrapper around hashlib.shake_256
 def shake256(*data, out_len):
-    h = hashlib.new('shake_256')
+    h = hashlib.shake_256()
     for item in data:
-        # check if the item is a list of ints or bytes
-        match type(item[0]):
-            case 'int':
+        if type(item) is int:
+            h.update(item.to_bytes(16, "little"))
+        elif type(item) is bytes:
+            h.update(item)
+        elif type(item) is list:
+            if type(item[0]) is int:
                 h.update(bytearray(item))
-            case 'bytes':
-                h.update(item)
+            elif type(item[0] is bytes):
+                # FIXME shake256 returns a bytes object, so the chain function returns a list of byte objects,
+                # which need to be converted for shake
+                h.update(bytearray([x for y in item for x in y]))
+        else:
+            print("shake256: unknown data type")
     return h.digest(out_len)
 
 def H_msg(R, pk_seed, pk_root, M):
