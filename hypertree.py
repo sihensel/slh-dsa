@@ -14,9 +14,9 @@ def getXMSSSignature(sig_ht: list, idx: int):
         idx:    index of the XMSS signature in sig_ht
     """
     # hypertree signatures contain d XMSS signatures
-    # each XMSS signature is len + h' elements
-    start = idx * (Params.len + Params.h_)
-    end = (idx + 1) * (Params.len + Params.h_)
+    # each XMSS signature is h' + len elements
+    start = idx * (Params.h_ + Params.len)
+    end = (idx + 1) * (Params.h_ + Params.len)
     return sig_ht[start:end]
 
 
@@ -75,7 +75,7 @@ def ht_verify(M, sig_ht, pk_seed, idx_tree, idx_leaf, pk_root):
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, Params.d):
-        idx_leaf = idx_tree % (2 ** Params.h_)
+        idx_leaf = int(idx_tree % (2 ** Params.h_))
         idx_tree = idx_tree >> Params.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)

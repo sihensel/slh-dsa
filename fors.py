@@ -53,7 +53,7 @@ def fors_sign(md, SK_seed, PK_seed, ADRS):      #Input: Message digest 𝑚𝑑,
     indices = base_2b(md, Params.a, Params.k)                 # Compute indices using base_2b function
 
     for i in range(Params.k):
-        SIG_FORS += fors_skGen(SK_seed, PK_seed, ADRS, i * 2**Params.a + indices[i])   # Compute signature elements
+        SIG_FORS.append(fors_skGen(SK_seed, PK_seed, ADRS, i * 2**Params.a + indices[i]))   # Compute signature elements
 
         AUTH = []
         for j in range(Params.a):
@@ -61,22 +61,24 @@ def fors_sign(md, SK_seed, PK_seed, ADRS):      #Input: Message digest 𝑚𝑑,
             AUTH.append(fors_node(SK_seed, i * 2**(Params.a - j) + s, j, PK_seed, ADRS))
         SIG_FORS += AUTH
 
+    # a FORS signature is:
+    # (n bytes + a * n bytes ) * k (=182 for our paremeter set)
     return SIG_FORS                             # Output: FORS signature SIG𝐹 𝑂𝑅𝑆
 
 #Algorithmus 17 (Computes a FORS public key from a FORS signature)
 def fors_pkFromSig(SIG_FORS, md, PK_seed, ADRS):    # Input: FORS signature SIG𝐹 𝑂𝑅𝑆, message digest 𝑚𝑑, public seed PK.seed, address ADRS
 
     indices = base_2b(md, Params.a, Params.k)
-    root = []
+    root = [0] * Params.k
     node = [0, 0]
 
     for i in range(Params.k):
-        sk = SIG_FORS[i * (Params.a + 1) * Params.n:(i * (Params.a + 1) + 1) * Params.n]    # Compute leaf
+        sk = SIG_FORS[i * (Params.a + 1):i * (Params.a + 1) + 1]    # Compute leaf
         ADRS.setTreeHeight(0)
         ADRS.setTreeIndex(i * 2**Params.a + indices[i])
         node[0] = F(PK_seed, ADRS, sk)
 
-        auth = SIG_FORS[(i * (Params.a + 1) + 1) * Params.n:(i + 1) * (Params.a + 1) * Params.n]    # Compute root from leaf and AUTH
+        auth = SIG_FORS[i * (Params.a + 1) + 1:(i + 1) * (Params.a + 1)]    # Compute root from leaf and AUTH
         for j in range(Params.a):
             ADRS.setTreeHeight(j + 1)
             if indices[i] // 2**j % 2 == 0:

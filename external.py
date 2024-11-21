@@ -30,7 +30,6 @@ def slh_sign(M, ctx, SK):           # Input: Message 𝑀, context string 𝑐�
     if addrnd is None:
         return None
 
-    # M_prime = b'\x00' + bytes([len(ctx)]) + ctx + M
     M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
 
     SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
@@ -38,7 +37,7 @@ def slh_sign(M, ctx, SK):           # Input: Message 𝑀, context string 𝑐�
     return SIG          # Output: SLH-DSA signature SIG
 
 # Algorithmus 23 (Generates a pre-hash SLH-DSA signature)
-def slh_hash_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
+def hash_slh_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
 
     if len(ctx) > 255:
         return None
@@ -48,20 +47,26 @@ def slh_hash_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐�
         return None
 
     # Pre-hash the message
-    if PH == "SHA-256":
-        PHM = hashlib.sha256(M).digest()
-    elif PH == "SHA-512":
-        PHM = hashlib.sha512(M).digest()
-    elif PH == "SHAKE128":
-        PHM = hashlib.shake_128(M).digest(256)
-    elif PH == "SHAKE256":
-        PHM = hashlib.shake_256(M).digest(512)
-    else:
-        # Handle other approved hash functions or XOFs
-        raise NotImplementedError("Unsupported pre-hash function")
+    # FIXME we probably need to convert the message to a bytes object
+    match PH:
+        case "SHA-256":
+            OID = toByte(0x0609608648016503040201, 11)
+            PHM = hashlib.sha256(M).digest()
+        case "SHA-512":
+            OID = toByte(0x0609608648016503040203, 11)
+            PHM = hashlib.sha512(M).digest()
+        case "SHAKE128":
+            OID = toByte(0x060960864801650304020B, 11)
+            PHM = hashlib.shake_128(M).digest(256)
+        case "SHAKE256":
+            OID = toByte(0x060960864801650304020C, 11)
+            PHM = hashlib.shake_256(M).digest(512)
+        case _:
+            # Handle other approved hash functions or XOFs
+            raise NotImplementedError("Unsupported pre-hash function")
 
     # Construct the M' message
-    M_prime = b'\x01' + bytes([len(ctx)]) + ctx + PHM
+    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + PHM
 
     # Sign the M' message
     SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
@@ -74,7 +79,7 @@ def slh_verify(M, SIG, ctx, PK):        # Input: Message 𝑀, signature SIG, co
     if len(ctx) > 255:
         return False
 
-    M_prime = b'\x00' + bytes([len(ctx)]) + ctx + M
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
 
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
 
@@ -85,20 +90,26 @@ def slh_hash_verify(M, SIG, ctx, PH, PK):   # Input: Message 𝑀, signature SIG
         return False
 
     # Pre-hash the message
-    if PH == "SHA-256":
-        PHM = hashlib.sha256(M).digest()
-    elif PH == "SHA-512":
-        PHM = hashlib.sha512(M).digest()
-    elif PH == "SHAKE128":
-        PHM = hashlib.shake_128(M).digest(256)
-    elif PH == "SHAKE256":
-        PHM = hashlib.shake_256(M).digest(512)
-    else:
-        # Handle other approved hash functions or XOFs
-        raise NotImplementedError("Unsupported pre-hash function")
+    # FIXME we probably need to convert the message to a bytes object
+    match PH:
+        case "SHA-256":
+            OID = toByte(0x0609608648016503040201, 11)
+            PHM = hashlib.sha256(M).digest()
+        case "SHA-512":
+            OID = toByte(0x0609608648016503040203, 11)
+            PHM = hashlib.sha512(M).digest()
+        case "SHAKE128":
+            OID = toByte(0x060960864801650304020B, 11)
+            PHM = hashlib.shake_128(M).digest(256)
+        case "SHAKE256":
+            OID = toByte(0x060960864801650304020C, 11)
+            PHM = hashlib.shake_256(M).digest(512)
+        case _:
+            # Handle other approved hash functions or XOFs
+            raise NotImplementedError("Unsupported pre-hash function")
 
     # Construct the M' message
-    M_prime = b'\x01' + bytes([len(ctx)]) + ctx + PHM
+    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + PHM
 
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
 
@@ -108,3 +119,6 @@ M = [10, 12, 15]
 ctx = [0]
 SK, PK = slh_keygen()
 sig = slh_sign(M, ctx, SK)
+
+result = slh_verify(M, sig, ctx, PK)
+print(result)
