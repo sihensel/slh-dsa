@@ -33,7 +33,7 @@ class Params:
 
 
 # wrapper around hashlib.shake_256
-def shake256(*data, out_len):
+def shake256(*data, out_len: int) -> bytes:
     h = hashlib.shake_256()
     for item in data:
         if type(item) is int:
@@ -51,20 +51,20 @@ def shake256(*data, out_len):
             print("shake256: unknown data type")
     return h.digest(out_len)
 
-def H_msg(R, pk_seed, pk_root, M):
+def H_msg(R: bytes, pk_seed: bytes, pk_root: bytes, M: bytes|list) -> bytes:
     return shake256(R, pk_seed, pk_root, M, out_len=8 * Params.m)
 
-def PRF(pk_seed, sk_seed, adrs: ADRS):
+def PRF(pk_seed: bytes, sk_seed: bytes, adrs: ADRS) -> bytes:
     return shake256(pk_seed, adrs.getADRS(), sk_seed, out_len=8 * Params.n)
 
-def PRF_msg(sk_prf, opt_rand, M):
+def PRF_msg(sk_prf: bytes, opt_rand: bytes, M: list|bytes) -> bytes:
     return shake256(sk_prf, opt_rand, M, out_len=8 * Params.n)
 
-def F(pk_seed, adrs: ADRS, M1):
+def F(pk_seed: bytes, adrs: ADRS, M1:list|bytes) -> bytes:
     return shake256(pk_seed, adrs.getADRS(), M1, out_len=8 * Params.n)
 
-def H(pk_seed, adrs: ADRS, M2):
+def H(pk_seed: bytes, adrs: ADRS, M2: list|bytes) -> bytes:
     return shake256(pk_seed, adrs.getADRS(), M2, out_len=8 * Params.n)
 
-def Tlen(pk_seed, adrs: ADRS, Ml):
+def Tlen(pk_seed: bytes, adrs: ADRS, Ml: list|bytes) -> bytes:
     return shake256(pk_seed, adrs.getADRS(), Ml, out_len=8 * Params.n)

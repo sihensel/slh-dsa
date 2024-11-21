@@ -6,7 +6,7 @@ from wots import wots_pkGen, wots_sign, wots_pkFromSig
 
 
 # algorithm 9
-def xmss_node(sk_seed, i: int, z: int, pk_seed, adrs: ADRS):
+def xmss_node(sk_seed: bytes, i: int, z: int, pk_seed: bytes, adrs: ADRS) -> bytes:
     """
     Computes the root of a Merkle subtree of WOTS+ public keys
     Params:
@@ -33,7 +33,7 @@ def xmss_node(sk_seed, i: int, z: int, pk_seed, adrs: ADRS):
 
 
 # algorithm 10
-def xmss_sign(M, sk_seed, idx: int, pk_seed, adrs: ADRS):
+def xmss_sign(M: list|bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) -> list:
     """
     Generates an XMSS signature
     
@@ -46,7 +46,7 @@ def xmss_sign(M, sk_seed, idx: int, pk_seed, adrs: ADRS):
     Returns:
         xmss signature
     """
-    AUTH = [0] * Params.h_
+    AUTH: list = [0] * Params.h_
     for j in range(Params.h_):
         k = math.floor(idx / (2 ** j)) ^ 1
         # alternative:
@@ -62,7 +62,7 @@ def xmss_sign(M, sk_seed, idx: int, pk_seed, adrs: ADRS):
 
 
 # algorithm 11
-def xmss_pkFromSig(idx: int, sig_xmss: list , M, pk_seed, adrs: ADRS):
+def xmss_pkFromSig(idx: int, sig_xmss: list , M: list|bytes, pk_seed: bytes, adrs: ADRS) -> bytes:
     """
     Computes an XMSS public key from an XMSS signature
 
@@ -75,7 +75,7 @@ def xmss_pkFromSig(idx: int, sig_xmss: list , M, pk_seed, adrs: ADRS):
     Returns:
         n-byte root value node[0]
     """
-    node = [0, 0]
+    node: list = [0, 0]
     adrs.setTypeAndClear(Params.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
 
@@ -100,7 +100,7 @@ def xmss_pkFromSig(idx: int, sig_xmss: list , M, pk_seed, adrs: ADRS):
     return node[0]
 
 
-def getWOTSSig(sig_xmss: list):
+def getWOTSSig(sig_xmss: list) -> list:
     """
     Returns the WOTS+ signature of a XMSS signature
     The WOTS+ signature always has len elements
@@ -109,7 +109,7 @@ def getWOTSSig(sig_xmss: list):
 
 
 
-def getXMSSAUTH(sig_xmss: list):
+def getXMSSAUTH(sig_xmss: list) -> list:
     """
     Returns the authentication path of a XMSS signature
     The authentication path consists of h' elements

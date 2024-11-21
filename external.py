@@ -6,7 +6,7 @@ from params import Params
 from wots import toByte
 
 # Algorithmus 21 (Generates an SLH-DSA key pair)
-def slh_keygen():
+def slh_keygen() -> tuple:
 
     # Generate random seeds
     SK_seed = secrets.token_bytes(Params.n)
@@ -21,14 +21,14 @@ def slh_keygen():
     return slh_keygen_internal(SK_seed, SK_prf, PK_seed)    # Output: SLH-DSA key pair (SK, PK)
 
 # Algorithmus 22 (Generates a pure SLH-DSA signature)
-def slh_sign(M, ctx, SK):           # Input: Message 𝑀, context string 𝑐𝑡𝑥, private key SK
+def slh_sign(M: list|bytes, ctx: list, SK: tuple) -> list:           # Input: Message 𝑀, context string 𝑐𝑡𝑥, private key SK
 
     if len(ctx) > 255:
-        return None
+        return []
 
     addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
     if addrnd is None:
-        return None
+        return []
 
     M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
 
@@ -37,14 +37,14 @@ def slh_sign(M, ctx, SK):           # Input: Message 𝑀, context string 𝑐�
     return SIG          # Output: SLH-DSA signature SIG
 
 # Algorithmus 23 (Generates a pre-hash SLH-DSA signature)
-def hash_slh_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
+def hash_slh_sign(M: list|bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
 
     if len(ctx) > 255:
-        return None
+        return []
 
     addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
     if addrnd is None:
-        return None
+        return []
 
     # Pre-hash the message
     # FIXME we probably need to convert the message to a bytes object
@@ -74,7 +74,7 @@ def hash_slh_sign(M, ctx, PH, SK):  # Input: Message 𝑀, context string 𝑐�
     return SIG                                  # Output: SLH-DSA signature SIG
 
 # Algorithmus 24 (Verifies a pure SLH-DSA signature)
-def slh_verify(M, SIG, ctx, PK):        # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, public key PK
+def slh_verify(M: list|bytes, SIG: list, ctx: list, PK: tuple) -> bool:        # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, public key PK
 
     if len(ctx) > 255:
         return False
@@ -84,7 +84,7 @@ def slh_verify(M, SIG, ctx, PK):        # Input: Message 𝑀, signature SIG, co
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
 
 # Algorithmus 25 (Verifies a pre-hash SLH-DSA signature)
-def slh_hash_verify(M, SIG, ctx, PH, PK):   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
+def slh_hash_verify(M: list|bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> bool:   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
 
     if len(ctx) > 255:
         return False

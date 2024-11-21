@@ -9,7 +9,7 @@ from wots import toInt
 from xmss import xmss_node
 
 # algorithm 18
-def slh_keygen_internal(sk_seed, sk_prf, pk_seed):
+def slh_keygen_internal(sk_seed: bytes, sk_prf: bytes, pk_seed: bytes) -> tuple:
     adrs = ADRS()
     adrs.setLayerAddress(Params.d - 1)
     pk_root = xmss_node(sk_seed, 0, Params.h_, pk_seed, adrs)
@@ -17,9 +17,8 @@ def slh_keygen_internal(sk_seed, sk_prf, pk_seed):
 
 
 # algorithm 19
-def slh_sign_internal(M, SK, addrnd):
+def slh_sign_internal(M: list|bytes, SK: tuple, addrnd: bytes) -> list:
     # NOTE precompute these values to make the code cleaner
-    # check if the output of shake can be sliced
     param1 = ceil(Params.k * Params.a / 8)
     param2 = ceil((Params.h - Params.h / Params.d) / 8)
     SIG = []
@@ -54,7 +53,7 @@ def slh_sign_internal(M, SK, addrnd):
     return SIG
 
 # algorithm 20
-def slh_verify_internal(M, SIG, PK):
+def slh_verify_internal(M: list|bytes, SIG: list, PK: tuple) -> bool:
     param1 = ceil(Params.k * Params.a / 8)
     param2 = ceil((Params.h - Params.h / Params.d) / 8)
 

@@ -7,7 +7,7 @@ from wots import base_2b
 
 
 # algorithm 14
-def fors_skGen(sk_seed, pk_seed, adrs: ADRS, idx):
+def fors_skGen(sk_seed: bytes, pk_seed: bytes, adrs: ADRS, idx: int) -> bytes:
     """
     Generates a FORS private-key value
 
@@ -26,7 +26,7 @@ def fors_skGen(sk_seed, pk_seed, adrs: ADRS, idx):
     return PRF(pk_seed, sk_seed, adrs)
 
 #Algorithmus 15 (Computes the root of a Merkle subtree of FORS public values)
-def fors_node(SK_seed, i, z, PK_seed, ADRS):    #Input: Secret seed SK.seed, target node index 𝑖, target node height 𝑧, public seed PK.seed, address ADRS
+def fors_node(SK_seed: bytes, i: int, z: int, PK_seed: bytes, ADRS) -> bytes:    #Input: Secret seed SK.seed, target node index 𝑖, target node height 𝑧, public seed PK.seed, address ADRS
 
     if z == 0:
         sk = fors_skGen(SK_seed, PK_seed, ADRS, i)
@@ -47,7 +47,7 @@ def fors_node(SK_seed, i, z, PK_seed, ADRS):    #Input: Secret seed SK.seed, tar
     return node                                 #Output: 𝑛-byte root 𝑛𝑜𝑑𝑒
 
 #Algorithmus 16 (Generates a FORS signature)
-def fors_sign(md, SK_seed, PK_seed, ADRS):      #Input: Message digest 𝑚𝑑, secret seed SK.seed, address ADRS, public seed PK.seed
+def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> list:      #Input: Message digest 𝑚𝑑, secret seed SK.seed, address ADRS, public seed PK.seed
 
     SIG_FORS = []                              # Initialize SIG_FORS as an empty byte string
     indices = base_2b(md, Params.a, Params.k)                 # Compute indices using base_2b function
@@ -66,11 +66,11 @@ def fors_sign(md, SK_seed, PK_seed, ADRS):      #Input: Message digest 𝑚𝑑,
     return SIG_FORS                             # Output: FORS signature SIG𝐹 𝑂𝑅𝑆
 
 #Algorithmus 17 (Computes a FORS public key from a FORS signature)
-def fors_pkFromSig(SIG_FORS, md, PK_seed, ADRS):    # Input: FORS signature SIG𝐹 𝑂𝑅𝑆, message digest 𝑚𝑑, public seed PK.seed, address ADRS
+def fors_pkFromSig(SIG_FORS: list, md: bytes, PK_seed: bytes, ADRS: ADRS) -> bytes:    # Input: FORS signature SIG𝐹 𝑂𝑅𝑆, message digest 𝑚𝑑, public seed PK.seed, address ADRS
 
     indices = base_2b(md, Params.a, Params.k)
-    root = [0] * Params.k
-    node = [0, 0]
+    root: list = [0] * Params.k
+    node: list = [0, 0]
 
     for i in range(Params.k):
         sk = SIG_FORS[i * (Params.a + 1):i * (Params.a + 1) + 1]    # Compute leaf

@@ -6,7 +6,7 @@ from params import Params
 from xmss import xmss_sign, xmss_pkFromSig
 
 
-def getXMSSSignature(sig_ht: list, idx: int):
+def getXMSSSignature(sig_ht: list, idx: int) -> list:
     """
     Get one XMSS signature (WOTS+ sig and authentication path) from a hypertree signature
     Params:
@@ -21,7 +21,7 @@ def getXMSSSignature(sig_ht: list, idx: int):
 
 
 # algorithm 12
-def ht_sign(M, sk_seed, pk_seed, idx_tree, idx_leaf):
+def ht_sign(M: list|bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int) -> list:
     """
     Generates a hypertree signature
 
@@ -55,7 +55,7 @@ def ht_sign(M, sk_seed, pk_seed, idx_tree, idx_leaf):
 
 
 # algorithm 13
-def ht_verify(M, sig_ht, pk_seed, idx_tree, idx_leaf, pk_root):
+def ht_verify(M: list|bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: int, pk_root: bytes) -> bool:
     """
     Verifies a hypertree signature
 
