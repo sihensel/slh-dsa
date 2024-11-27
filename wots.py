@@ -90,7 +90,7 @@ def wots_sign(M: list|bytes, SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> list
     for i in range(Params.len1):
         csum += Params.w - 1 - msg[i]                  # Compute checksum
 
-    csum <<= (8 - ((Params.len1 * Params.lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
+    csum <<= (8 - ((Params.len2 * Params.lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
     msg += base_2b(toByte(csum, math.ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Convert to base w
 
     skADRS = deepcopy(adrs)                     # Copy address to create key generation key address

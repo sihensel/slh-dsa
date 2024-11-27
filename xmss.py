@@ -50,7 +50,7 @@ def xmss_sign(M: list|bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADR
     for j in range(Params.h_):
         k = math.floor(idx / (2 ** j)) ^ 1
         # alternative:
-        # k = (idx >> )j ^ 1
+        # k = (idx >> j) ^ 1
         # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L241
         AUTH[j] = xmss_node(sk_seed, k, j, pk_seed, adrs)
 
@@ -88,7 +88,7 @@ def xmss_pkFromSig(idx: int, sig_xmss: list , M: list|bytes, pk_seed: bytes, adr
 
     for k in range(Params.h_):
         adrs.setTreeHeight(k + 1)
-        if math.floor(idx / 2 ** k) % 2 == 0:
+        if math.floor(idx / (2 ** k)) % 2 == 0:
         # alternative
         # if ((idx >> k) & 1) == 0:
             adrs.setTreeIndex(int(adrs.getTreeIndex() / 2))
