@@ -25,6 +25,7 @@ def fors_skGen(sk_seed: bytes, pk_seed: bytes, adrs: ADRS, idx: int) -> bytes:
     sk_adrs.setTreeIndex(idx)
     return PRF(pk_seed, sk_seed, adrs)
 
+
 #Algorithmus 15 (Computes the root of a Merkle subtree of FORS public values)
 def fors_node(SK_seed: bytes, i: int, z: int, PK_seed: bytes, ADRS) -> bytes:    #Input: Secret seed SK.seed, target node index 𝑖, target node height 𝑧, public seed PK.seed, address ADRS
 
@@ -64,6 +65,7 @@ def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> list:   
     # a FORS signature is:
     # (n bytes + a * n bytes ) * k (=182 for our paremeter set)
     return SIG_FORS                             # Output: FORS signature SIG𝐹 𝑂𝑅𝑆
+
 
 #Algorithmus 17 (Computes a FORS public key from a FORS signature)
 def fors_pkFromSig(SIG_FORS: list, md: bytes, PK_seed: bytes, ADRS: ADRS) -> bytes:    # Input: FORS signature SIG𝐹 𝑂𝑅𝑆, message digest 𝑚𝑑, public seed PK.seed, address ADRS

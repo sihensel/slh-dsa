@@ -1,4 +1,4 @@
-import math
+from math import floor
 
 from adrs import ADRS
 from params import Params, H
@@ -33,7 +33,7 @@ def xmss_node(sk_seed: bytes, i: int, z: int, pk_seed: bytes, adrs: ADRS) -> byt
 
 
 # algorithm 10
-def xmss_sign(M: list|bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) -> list:
+def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) -> list:
     """
     Generates an XMSS signature
     
@@ -48,7 +48,7 @@ def xmss_sign(M: list|bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADR
     """
     AUTH: list = [0] * Params.h_
     for j in range(Params.h_):
-        k = math.floor(idx / (2 ** j)) ^ 1
+        k = floor(idx / (2 ** j)) ^ 1
         # alternative:
         # k = (idx >> j) ^ 1
         # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L241
@@ -62,7 +62,7 @@ def xmss_sign(M: list|bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADR
 
 
 # algorithm 11
-def xmss_pkFromSig(idx: int, sig_xmss: list , M: list|bytes, pk_seed: bytes, adrs: ADRS) -> bytes:
+def xmss_pkFromSig(idx: int, sig_xmss: list , M: bytes, pk_seed: bytes, adrs: ADRS) -> bytes:
     """
     Computes an XMSS public key from an XMSS signature
 
@@ -88,9 +88,8 @@ def xmss_pkFromSig(idx: int, sig_xmss: list , M: list|bytes, pk_seed: bytes, adr
 
     for k in range(Params.h_):
         adrs.setTreeHeight(k + 1)
-        if math.floor(idx / (2 ** k)) % 2 == 0:
-        # alternative
-        # if ((idx >> k) & 1) == 0:
+        # alternative: if ((idx >> k) & 1) == 0:
+        if floor(idx / (2 ** k)) % 2 == 0:
             adrs.setTreeIndex(int(adrs.getTreeIndex() / 2))
             node[1] = H(pk_seed, adrs, node[0] + AUTH[k])
         else:
@@ -106,7 +105,6 @@ def getWOTSSig(sig_xmss: list) -> list:
     The WOTS+ signature always has len elements
     """
     return sig_xmss[0:Params.len]
-
 
 
 def getXMSSAUTH(sig_xmss: list) -> list:

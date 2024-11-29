@@ -21,7 +21,7 @@ def getXMSSSignature(sig_ht: list, idx: int) -> list:
 
 
 # algorithm 12
-def ht_sign(M: list|bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int) -> list:
+def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int) -> list:
     """
     Generates a hypertree signature
 
@@ -55,7 +55,7 @@ def ht_sign(M: list|bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_le
 
 
 # algorithm 13
-def ht_verify(M: list|bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: int, pk_root: bytes) -> bool:
+def ht_verify(M: bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: int, pk_root: bytes) -> bool:
     """
     Verifies a hypertree signature
 
@@ -82,6 +82,4 @@ def ht_verify(M: list|bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_le
         sig_tmp = getXMSSSignature(sig_ht, j)
         node = xmss_pkFromSig(idx_leaf, sig_tmp, node, pk_seed, adrs)
 
-    if node == pk_root:
-        return True
-    return False
+    return node == pk_root

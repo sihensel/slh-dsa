@@ -1,13 +1,15 @@
-import math
+from math import ceil, floor
 from copy import deepcopy
 
-from adrs import ADRS
+from adrs import ADRS, toByte
 from params import Params, Tlen, PRF, F
 
+
 #Algorhitmus 1 (Computes 𝑙𝑒𝑛2)
+# FIXME we don't need this algorithm since len2 = 3 for all parameter sets
 def gen_len2(n: int, lg_w: int) -> int:          #Input: Security parameter 𝑛, bits per hash chain 𝑙𝑔_𝑤
     w = 2 ** lg_w                                #Compute w: w = 2^lg_w
-    len1 = math.floor((8 * n + lg_w - 1) / lg_w) #Compute len1
+    len1 = floor((8 * n + lg_w - 1) / lg_w) #Compute len1
     max_checksum = len1 * (w - 1)                #Compute maximum possible checksum value
     len2 = 1                                     #Initialize len2
     capacity = w                                 #Initialize capacity
@@ -18,26 +20,9 @@ def gen_len2(n: int, lg_w: int) -> int:          #Input: Security parameter 𝑛
 
     return len2                                  #Output: 𝑙𝑒𝑛2
 
-#Algorithmus 2 (Converts a byte string to an integer)
-# NOTE we can either leave this separate or take it from the ADRS class
-def toInt(X: list, n: int) -> int:              #Input: 𝑛-byte string 𝑋
-    total = 0
-    for i in range(n):
-        total = 256 * total + X[i]
-    return total                                #Output: Integer value of 𝑋
-
-#Algorithmus 3 (Converts an integer to a byte string)
-# NOTE we can either leave this separate or take it from the ADRS class
-def toByte(x: int, n: int) -> list:             #Input: Integer 𝑥, string length 𝑛
-    total = x                                   #Initialize total to x
-    S = [0] * n                                 #Create an array of size n to store the byte string
-    for i in range(n):                          # Loop from 0 to n-1
-        S[n - 1 - i] = total % 256              # Set S[n - 1 - i] to the least significant byte of total
-        total = total >> 8                      # Shift total right by 8 bits to remove the last byte
-    return S                                    #Output: Byte string of length 𝑛 containing binary representation of 𝑥 in big-endian byte-order
 
 #Algorithmus 4 (Computes the base 2𝑏 representation of 𝑋)
-def base_2b(X: list, b: int, out_len: int) -> list: #Input: Byte string 𝑋 of length at least ⌈𝑜𝑢𝑡_𝑙𝑒𝑛⋅𝑏/8⌉, integer 𝑏, output length 𝑜𝑢𝑡_𝑙𝑒𝑛
+def base_2b(X: list|bytes, b: int, out_len: int) -> list: #Input: Byte string 𝑋 of length at least ⌈𝑜𝑢𝑡_𝑙𝑒𝑛⋅𝑏/8⌉, integer 𝑏, output length 𝑜𝑢𝑡_𝑙𝑒𝑛
     in_index = 0                                    # Equivalent to `in` in pseudocode
     bits = 0                                        # Number of bits currently in `total`
     total = 0                                       # Accumulates the bit representation
@@ -54,6 +39,7 @@ def base_2b(X: list, b: int, out_len: int) -> list: #Input: Byte string 𝑋 of 
 
     return baseb                                    #Output: Array of 𝑜𝑢𝑡_𝑙𝑒𝑛 integers in the range [0, … , 2𝑏 − 1]
 
+
 #Algorithmus 5 (Chaining function used in WOTS+)
 def chain(X: bytes, i: int, s: int, PK_seed: bytes, adrs: ADRS) -> bytes:     #Input: Input string 𝑋, start index 𝑖, number of steps 𝑠, public seed PK.seed, address ADRS
     tmp = X
@@ -62,6 +48,7 @@ def chain(X: bytes, i: int, s: int, PK_seed: bytes, adrs: ADRS) -> bytes:     #I
         tmp = F(PK_seed, adrs, tmp)
 
     return tmp                                  #Output: Value of F iterated 𝑠 times on 𝑋
+
 
 #Algorithmus 6 (Generates a WOTS+ public key)
 def wots_pkGen(SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> bytes:    #Input: Secret seed SK.seed, public seed PK.seed, address ADRS
@@ -83,15 +70,18 @@ def wots_pkGen(SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> bytes:    #Input: 
     pk = Tlen(PK_seed, wotspkADRS, tmp)         # Compress public key
     return pk                                   #Output: WOTS+ public key 𝑝𝑘
 
+
 #Algorithmus 7 (Generates a WOTS+ signature on an n-byte message)
-def wots_sign(M: list|bytes, SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> list:   #Input: Message 𝑀, secret seed SK.seed, public seed PK.seed, address ADRS
+def wots_sign(M: bytes, SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> list:   #Input: Message 𝑀, secret seed SK.seed, public seed PK.seed, address ADRS
     csum = 0
     msg = base_2b(M, Params.lg_w, Params.len1)                # Convert message to base w
     for i in range(Params.len1):
         csum += Params.w - 1 - msg[i]                  # Compute checksum
 
-    csum <<= (8 - ((Params.len2 * Params.lg_w) % 8)) % 8      # For lg_w = 4, left shift by 4
-    msg += base_2b(toByte(csum, math.ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Convert to base w
+    # NOTE is the same as  (8 - ((Params.len2 * Params.lg_w) % 8)) % 8
+    # len2 and lg_w are static across all parameter sets, so the above equation returns always 4
+    csum <<= 4
+    msg += base_2b(toByte(csum, ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Convert to base w
 
     skADRS = deepcopy(adrs)                     # Copy address to create key generation key address
     skADRS.setTypeAndClear(Params.WOTS_PRF)
@@ -106,6 +96,7 @@ def wots_sign(M: list|bytes, SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> list
 
     return sig                                  #Output: WOTS+ signature 𝑠𝑖𝑔
 
+
 #Algorithmus 8 (Computes a WOTS+ public key from a message and its signature)
 def wots_pkFromSig(sig: list, M: list|bytes, PK_seed: bytes, adrs: ADRS) -> bytes:      #Input: WOTS+ signature 𝑠𝑖𝑔, message 𝑀, public seed PK.seed, address ADRS
     csum = 0
@@ -113,8 +104,10 @@ def wots_pkFromSig(sig: list, M: list|bytes, PK_seed: bytes, adrs: ADRS) -> byte
     for i in range(Params.len1):
         csum += Params.w - 1 - msg[i]                  # Berechne Prüfsumme
 
-    csum <<= (8 - ((Params.len2 * Params.lg_w) % 8)) % 8      # Für lg_w = 4, shift um 4 nach links
-    msg += base_2b(toByte(csum, math.ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Konvertiere in Basis w
+    # NOTE is the same as (8 - ((Params.len2 * Params.lg_w) % 8)) % 8
+    # len2 and lg_w are static across all parameter sets, so the above equation returns always 4
+    csum <<= 4
+    msg += base_2b(toByte(csum, ceil((Params.len2 * Params.lg_w) / 8)), Params.lg_w, Params.len2)  # Konvertiere in Basis w
 
     tmp: list = [0] * Params.len
     for i in range(Params.len):

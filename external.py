@@ -3,7 +3,7 @@ import hashlib
 
 from internal import slh_keygen_internal, slh_sign_internal, slh_verify_internal
 from params import Params
-from wots import toByte
+from adrs import toByte
 
 # Algorithmus 21 (Generates an SLH-DSA key pair)
 def slh_keygen() -> tuple:
@@ -20,8 +20,9 @@ def slh_keygen() -> tuple:
     # Call the internal key generation function
     return slh_keygen_internal(SK_seed, SK_prf, PK_seed)    # Output: SLH-DSA key pair (SK, PK)
 
+
 # Algorithmus 22 (Generates a pure SLH-DSA signature)
-def slh_sign(M: list|bytes, ctx: list, SK: tuple) -> list:           # Input: Message 𝑀, context string 𝑐𝑡𝑥, private key SK
+def slh_sign(M: bytes, ctx: list, SK: tuple) -> list:           # Input: Message 𝑀, context string 𝑐𝑡𝑥, private key SK
 
     if len(ctx) > 255:
         return []
@@ -30,14 +31,16 @@ def slh_sign(M: list|bytes, ctx: list, SK: tuple) -> list:           # Input: Me
     if addrnd is None:
         return []
 
-    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
+    # NOTE M is a bytes object, hence we need to put it in a list so the + operator works
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + [M]
 
     SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
 
     return SIG          # Output: SLH-DSA signature SIG
 
+
 # Algorithmus 23 (Generates a pre-hash SLH-DSA signature)
-def hash_slh_sign(M: list|bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
+def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
 
     if len(ctx) > 255:
         return []
@@ -47,7 +50,6 @@ def hash_slh_sign(M: list|bytes, ctx: list, PH: str, SK: tuple) -> list:  # Inpu
         return []
 
     # Pre-hash the message
-    # FIXME we probably need to convert the message to a bytes object
     match PH:
         case "SHA-256":
             OID = toByte(0x0609608648016503040201, 11)
@@ -66,31 +68,32 @@ def hash_slh_sign(M: list|bytes, ctx: list, PH: str, SK: tuple) -> list:  # Inpu
             raise NotImplementedError("Unsupported pre-hash function")
 
     # Construct the M' message
-    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + PHM
+    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + [PHM]
 
     # Sign the M' message
     SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
 
     return SIG                                  # Output: SLH-DSA signature SIG
 
+
 # Algorithmus 24 (Verifies a pure SLH-DSA signature)
-def slh_verify(M: list|bytes, SIG: list, ctx: list, PK: tuple) -> bool:        # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, public key PK
+def slh_verify(M: bytes, SIG: list, ctx: list, PK: tuple) -> bool:        # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, public key PK
 
     if len(ctx) > 255:
         return False
 
-    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + M
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx + [M]
 
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
 
+
 # Algorithmus 25 (Verifies a pre-hash SLH-DSA signature)
-def slh_hash_verify(M: list|bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> bool:   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
+def hash_slh_verify(M: bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> bool:   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
 
     if len(ctx) > 255:
         return False
 
     # Pre-hash the message
-    # FIXME we probably need to convert the message to a bytes object
     match PH:
         case "SHA-256":
             OID = toByte(0x0609608648016503040201, 11)
@@ -109,16 +112,6 @@ def slh_hash_verify(M: list|bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> 
             raise NotImplementedError("Unsupported pre-hash function")
 
     # Construct the M' message
-    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + PHM
+    M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID + [PHM]
 
     return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
-
-
-# test data
-M = [10, 12, 15]
-ctx = [0]
-SK, PK = slh_keygen()
-sig = slh_sign(M, ctx, SK)
-
-result = slh_verify(M, sig, ctx, PK)
-print(result)

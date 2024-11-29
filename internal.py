@@ -5,8 +5,9 @@ from adrs import ADRS
 from fors import fors_sign, fors_pkFromSig
 from hypertree import ht_sign, ht_verify
 from params import Params, H_msg, PRF_msg
-from wots import toInt
+from adrs import toInt
 from xmss import xmss_node
+
 
 # algorithm 18
 def slh_keygen_internal(sk_seed: bytes, sk_prf: bytes, pk_seed: bytes) -> tuple:
@@ -17,7 +18,7 @@ def slh_keygen_internal(sk_seed: bytes, sk_prf: bytes, pk_seed: bytes) -> tuple:
 
 
 # algorithm 19
-def slh_sign_internal(M: list|bytes, SK: tuple, addrnd: bytes) -> list:
+def slh_sign_internal(M: list, SK: tuple, addrnd: bytes) -> list:
     # NOTE precompute these values to make the code cleaner
     param1 = ceil(Params.k * Params.a / 8)
     param2 = ceil((Params.h - Params.h / Params.d) / 8)
@@ -52,8 +53,9 @@ def slh_sign_internal(M: list|bytes, SK: tuple, addrnd: bytes) -> list:
     # = 491 elements in the list (for our parameter set)
     return SIG
 
+
 # algorithm 20
-def slh_verify_internal(M: list|bytes, SIG: list, PK: tuple) -> bool:
+def slh_verify_internal(M: list, SIG: list, PK: tuple) -> bool:
     param1 = ceil(Params.k * Params.a / 8)
     param2 = ceil((Params.h - Params.h / Params.d) / 8)
 
