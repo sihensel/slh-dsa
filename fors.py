@@ -1,8 +1,9 @@
 from copy import deepcopy
 from math import floor
 
+import params
 from adrs import ADRS
-from params import Params, PRF, H, F, Tlen
+from shake import F, H, PRF, Tlen
 from wots import base_2b
 
 
@@ -20,7 +21,7 @@ def fors_skGen(sk_seed: bytes, pk_seed: bytes, adrs: ADRS, idx: int) -> bytes:
         n-byte FORS private key
     """
     sk_adrs = deepcopy(adrs)
-    sk_adrs.setTypeAndClear(Params.FORS_PRF)
+    sk_adrs.setTypeAndClear(params.prm.FORS_PRF)
     sk_adrs.setKeyPairAddress(adrs.getKeyPairAddress())
     sk_adrs.setTreeIndex(idx)
     return PRF(pk_seed, sk_seed, adrs)
@@ -51,15 +52,15 @@ def fors_node(SK_seed: bytes, i: int, z: int, PK_seed: bytes, ADRS) -> bytes:   
 def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> list:      #Input: Message digest 𝑚𝑑, secret seed SK.seed, address ADRS, public seed PK.seed
 
     SIG_FORS = []                              # Initialize SIG_FORS as an empty byte string
-    indices = base_2b(md, Params.a, Params.k)                 # Compute indices using base_2b function
+    indices = base_2b(md, params.prm.a, params.prm.k)                 # Compute indices using base_2b function
 
-    for i in range(Params.k):
-        SIG_FORS.append(fors_skGen(SK_seed, PK_seed, ADRS, i * 2**Params.a + indices[i]))   # Compute signature elements
+    for i in range(params.prm.k):
+        SIG_FORS.append(fors_skGen(SK_seed, PK_seed, ADRS, i * 2 ** params.prm.a + indices[i]))   # Compute signature elements
 
         AUTH = []
-        for j in range(Params.a):
+        for j in range(params.prm.a):
             s = floor(indices[i] / 2 ** j) ^ 1              # Compute auth path
-            AUTH.append(fors_node(SK_seed, i * 2**(Params.a - j) + s, j, PK_seed, ADRS))
+            AUTH.append(fors_node(SK_seed, i * 2**(params.prm.a - j) + s, j, PK_seed, ADRS))
         SIG_FORS += AUTH
 
     # a FORS signature is:
@@ -70,18 +71,18 @@ def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> list:   
 #Algorithmus 17 (Computes a FORS public key from a FORS signature)
 def fors_pkFromSig(SIG_FORS: list, md: bytes, PK_seed: bytes, ADRS: ADRS) -> bytes:    # Input: FORS signature SIG𝐹 𝑂𝑅𝑆, message digest 𝑚𝑑, public seed PK.seed, address ADRS
 
-    indices = base_2b(md, Params.a, Params.k)
-    root: list = [0] * Params.k
+    indices = base_2b(md, params.prm.a, params.prm.k)
+    root: list = [0] * params.prm.k
     node: list = [0, 0]
 
-    for i in range(Params.k):
-        sk = SIG_FORS[i * (Params.a + 1):i * (Params.a + 1) + 1]    # Compute leaf
+    for i in range(params.prm.k):
+        sk = SIG_FORS[i * (params.prm.a + 1):i * (params.prm.a + 1) + 1]    # Compute leaf
         ADRS.setTreeHeight(0)
-        ADRS.setTreeIndex(i * 2**Params.a + indices[i])
+        ADRS.setTreeIndex(i * 2 ** params.prm.a + indices[i])
         node[0] = F(PK_seed, ADRS, sk)
 
-        auth = SIG_FORS[i * (Params.a + 1) + 1:(i + 1) * (Params.a + 1)]    # Compute root from leaf and AUTH
-        for j in range(Params.a):
+        auth = SIG_FORS[i * (params.prm.a + 1) + 1:(i + 1) * (params.prm.a + 1)]    # Compute root from leaf and AUTH
+        for j in range(params.prm.a):
             ADRS.setTreeHeight(j + 1)
             if indices[i] // 2**j % 2 == 0:
                 ADRS.setTreeIndex(ADRS.getTreeIndex() // 2)
@@ -99,7 +100,7 @@ def fors_pkFromSig(SIG_FORS: list, md: bytes, PK_seed: bytes, ADRS: ADRS) -> byt
         root[i] = node[0]
 
     forspkADRS = deepcopy(ADRS)                    # Copy address to create a FORS public-key address
-    forspkADRS.setTypeAndClear(Params.FORS_ROOTS)
+    forspkADRS.setTypeAndClear(params.prm.FORS_ROOTS)
     forspkADRS.setKeyPairAddress(ADRS.getKeyPairAddress())
 
     pk = Tlen(PK_seed, forspkADRS, root)          # Compute the FORS public key

@@ -2,6 +2,7 @@ import time
 
 from external import slh_keygen, slh_sign, slh_verify
 from external import hash_slh_sign, hash_slh_verify
+from params import setup_parameter_set
 
 
 def main(M: bytes,
@@ -10,8 +11,11 @@ def main(M: bytes,
          sk_seed: int=0,
          sk_prf: int=0,
          pk_seed :int=0,
-         pk_root: int=0
+         pk_root: int=0,
+         parameter_set: str="SLH-DSA-SHAKE-128f"
     ):
+
+    setup_parameter_set(parameter_set)
 
     if gen_keypair:
         SK, PK = slh_keygen()
@@ -38,11 +42,10 @@ def main(M: bytes,
 
 if __name__ == "__main__":
     # FIXME maybe add CLI interface via argparse
-    # FIXME find a way to call params.setup_parameter_set
     M = b"1234"
 
     start = time.time()
-    result = main(M=M, gen_keypair=True, sign_msg_hash=True)
+    result = main(M=M, gen_keypair=True, sign_msg_hash=True, parameter_set="SLH-DSA-SHAKE-128f")
     end = time.time()
     print("signature valid") if result else print("signature invalid")
     print(f"Took {end - start} seconds")

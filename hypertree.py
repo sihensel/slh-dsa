@@ -1,8 +1,8 @@
 from copy import deepcopy
 
 
+import params
 from adrs import ADRS
-from params import Params
 from xmss import xmss_sign, xmss_pkFromSig
 
 
@@ -15,8 +15,8 @@ def getXMSSSignature(sig_ht: list, idx: int) -> list:
     """
     # hypertree signatures contain d XMSS signatures
     # each XMSS signature is h' + len elements
-    start = idx * (Params.h_ + Params.len)
-    end = (idx + 1) * (Params.h_ + Params.len)
+    start = idx * (params.prm.h_ + params.prm.len)
+    end = (idx + 1) * (params.prm.h_ + params.prm.len)
     return sig_ht[start:end]
 
 
@@ -41,15 +41,15 @@ def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: i
     sig_ht = deepcopy(sig_tmp)
     root = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
-    for j in range(1, Params.d):
-        idx_leaf = idx_tree % (2 ** Params.h_)
-        idx_tree = idx_tree >> Params.h_
+    for j in range(1, params.prm.d):
+        idx_leaf = idx_tree % (2 ** params.prm.h_)
+        idx_tree = idx_tree >> params.prm.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
         sig_tmp = xmss_sign(root, sk_seed, idx_leaf, pk_seed, adrs)
         sig_ht += sig_tmp
 
-        if j < Params.d - 1:
+        if j < params.prm.d - 1:
             root = xmss_pkFromSig(idx_leaf, sig_tmp, root, pk_seed, adrs)
     return sig_ht
 
@@ -74,9 +74,9 @@ def ht_verify(M: bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: i
     sig_tmp = getXMSSSignature(sig_ht, 0)
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
-    for j in range(1, Params.d):
-        idx_leaf = int(idx_tree % (2 ** Params.h_))
-        idx_tree = idx_tree >> Params.h_
+    for j in range(1, params.prm.d):
+        idx_leaf = int(idx_tree % (2 ** params.prm.h_))
+        idx_tree = idx_tree >> params.prm.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
         sig_tmp = getXMSSSignature(sig_ht, j)

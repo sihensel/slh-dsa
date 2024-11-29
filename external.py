@@ -1,17 +1,17 @@
 import secrets
 import hashlib
 
-from internal import slh_keygen_internal, slh_sign_internal, slh_verify_internal
-from params import Params
+import params
 from adrs import toByte
+from internal import slh_keygen_internal, slh_sign_internal, slh_verify_internal
 
 # Algorithmus 21 (Generates an SLH-DSA key pair)
 def slh_keygen() -> tuple:
 
     # Generate random seeds
-    SK_seed = secrets.token_bytes(Params.n)
-    SK_prf = secrets.token_bytes(Params.n)
-    PK_seed = secrets.token_bytes(Params.n)
+    SK_seed = secrets.token_bytes(params.prm.n)
+    SK_prf = secrets.token_bytes(params.prm.n)
+    PK_seed = secrets.token_bytes(params.prm.n)
 
     # Check for errors
     if not SK_seed or not SK_prf or not PK_seed:
@@ -27,7 +27,7 @@ def slh_sign(M: bytes, ctx: list, SK: tuple) -> list:           # Input: Message
     if len(ctx) > 255:
         return []
 
-    addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
+    addrnd = secrets.token_bytes(params.prm.n)  # Skip for deterministic variant
     if addrnd is None:
         return []
 
@@ -45,7 +45,7 @@ def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Me
     if len(ctx) > 255:
         return []
 
-    addrnd = secrets.token_bytes(Params.n)  # Skip for deterministic variant
+    addrnd = secrets.token_bytes(params.prm.n)  # Skip for deterministic variant
     if addrnd is None:
         return []
 
