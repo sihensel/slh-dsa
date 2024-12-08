@@ -64,7 +64,7 @@ def setup_parameter_set(name: str):
         prm.k = 22
         prm.m = 47
 
-    elif name == "SLH-DSA-SHAKE-256s":
+    elif name == "SLH-DSA-SHAKE-256f":
         prm.n = 32
         prm.h = 68
         prm.d = 17

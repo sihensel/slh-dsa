@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import time
 
 from external import slh_keygen, slh_sign, slh_verify
@@ -7,45 +9,80 @@ from params import setup_parameter_set
 
 def main(M: bytes,
          gen_keypair: bool=False,
-         sign_msg_hash: bool=True,
-         sk_seed: int=0,
-         sk_prf: int=0,
-         pk_seed :int=0,
-         pk_root: int=0,
+         sign_msg_hash: bool=False,
+         verify: bool=False,
+         SK: tuple[bytes, bytes, bytes, bytes]=(b"", b"", b"", b""),
+         PK: tuple[bytes, bytes]=(b"", b""),
+         sig: list[bytes]=[],
          parameter_set: str="SLH-DSA-SHAKE-128f"
-    ):
+    ) -> bool:
 
     setup_parameter_set(parameter_set)
 
     if gen_keypair:
         SK, PK = slh_keygen()
-        print("sk_seed:", int.from_bytes(SK[0]))
-        print("sk_prf: ", int.from_bytes(SK[1]))
-        print("pk_seed:", int.from_bytes(SK[2]))
-        print("pk_root:", int.from_bytes(SK[3]))
-    else:
-        SK = (sk_seed.to_bytes(16), sk_prf.to_bytes(16), pk_seed.to_bytes(16), pk_root.to_bytes(16))
-        PK = (pk_seed.to_bytes(16), pk_root.to_bytes(16))
+        with open("key.txt", "w") as fp:
+            print("writing key data into key.txt")
+            fp.write(SK[0].hex() + SK[1].hex() + SK[2].hex() + SK[3].hex() + "\n")
+            fp.write(SK[2].hex() + SK[3].hex() + "\n")
 
     # ctx is usually initialized as an empty byte array
     ctx = [0]
 
     if sign_msg_hash:
-        # create signature of hash(M) and verify
-        hash_sig = hash_slh_sign(M, ctx, "SHA-256", SK)
-        return hash_slh_verify(M, hash_sig, ctx, "SHA-256", PK)
+        if verify:
+            return hash_slh_verify(M, sig, ctx, "SHA-256", PK)
+        else:
+            # create signature of hash(M) and verify
+            sig = hash_slh_sign(M, ctx, "SHA-256", SK)
+            with open("sig.txt", "w") as fp:
+                print("writing signature to signature.txt")
+                data = [i.hex() for i in sig]
+                for i in data:
+                    fp.write(i + "\n")
     else:
-        # create signature of M and verify
-        sig = slh_sign(M, ctx, SK)
-        return slh_verify(M, sig, ctx, PK)
+        if verify:
+            return slh_verify(M, sig, ctx, PK)
+        else:
+            # create signature of M and verify
+            sig = slh_sign(M, ctx, SK)
+            with open("sig.txt", "w") as fp:
+                print("writing signature to signature.txt")
+                data = [i.hex() for i in sig]
+                for i in data:
+                    fp.write(i + "\n")
+    return True
 
 
 if __name__ == "__main__":
-    # FIXME maybe add CLI interface via argparse
-    M = b"1234"
 
+    M = b"Hello World"
+
+    # read key data from file
+    with open("key.txt", "r") as fp:
+        data = [line.rstrip() for line in fp]
+        SK = bytes.fromhex(data[0])
+        SK = (SK[0:16], SK[16:32], SK[32:48], SK[48:])
+        PK = bytes.fromhex(data[1])
+        PK = (PK[0:16], PK[16:])
+
+    # read signature from file
+    with open("sig.txt", "r") as fp:
+        data = [line.rstrip() for line in fp]
+        sig = [bytes.fromhex(i) for i in data]
+
+    verify = True
     start = time.time()
-    result = main(M=M, gen_keypair=True, sign_msg_hash=True, parameter_set="SLH-DSA-SHAKE-128f")
+    result = main(M=M,
+                  gen_keypair=False,
+                  sign_msg_hash=False,
+                  verify=verify,
+                  SK=SK,
+                  PK=PK,
+                  sig=sig,
+                  parameter_set="SLH-DSA-SHAKE-128f"
+                  )
     end = time.time()
-    print("signature valid") if result else print("signature invalid")
     print(f"Took {end - start} seconds")
+    if verify:
+        print("signature valid") if result else print("signature invalid")
