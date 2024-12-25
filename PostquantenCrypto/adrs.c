@@ -1,16 +1,11 @@
 #include <stdint.h>
 #include <string.h>
-
-#define ADRS_SIZE 32
-
-typedef struct {
-    uint8_t adrs[ADRS_SIZE]; // 32 Byte Address
-} ADRS;
+#include "adrs.h"
 
 // Hilfsfunktion: Wandelt eine Ganzzahl in ein Byte-Array um
 void toByte(int x, int n, uint8_t *S) {
     for (int i = 0; i < n; i++) {
-        S[n - 1 - i] = x & 0xFF;
+        S[n - 1 - i] = x % 256;
         x >>= 8;
     }
 }
