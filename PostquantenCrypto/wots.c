@@ -1,9 +1,8 @@
 #include <math.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "params.h"
 #include "shake.h"
+#include "wots.h"
 
 // Algorithm 1 (Computes len2)
 // NOTE: we don't need this algorithm since len2 = 3 for all parameter sets
@@ -45,14 +44,14 @@ void base_2b(const unsigned char *X, int b, int out_len, unsigned char *baseb)
 // Algorithm 5 (Chaining function used in WOTS+)
 void chain(Parameters *prm, const unsigned char *X, int i, int s, const unsigned char *PK_seed, ADRS *adrs, unsigned char *buffer)
 {
-    unsigned char tmp[8 * prm->n];
-    memcpy(tmp, X, 8 * prm->n);
+    unsigned char tmp[prm->n];
+    memcpy(tmp, X, prm->n);
 
     for (int j = i; j < i + s; j++) {
         setHashAddress(adrs, j);
-        F(PK_seed, adrs, tmp, tmp, 8 * prm->n);
+        F(PK_seed, adrs, tmp, tmp, prm->n);
     }
-    memcpy(buffer, tmp, 8 * prm->n);
+    memcpy(buffer, tmp, prm->n);
 }
 
 // Algorithm 6 (Generates a WOTS+ public key)
@@ -63,34 +62,26 @@ void wots_pkGen(Parameters *prm, const unsigned char *SK_seed, const unsigned ch
     setTypeAndClear(&skADRS, prm->WOTS_PRF);
     setKeyPairAddress(&skADRS, getKeyPairAddress(&adrs));
 
-    unsigned char sk[8 * prm->n];
-    unsigned char **tmp = malloc(prm->len * sizeof(unsigned char *));
-
+    unsigned char sk[prm->n];
+    unsigned char tmp[prm->len * prm->n];
     for (int i = 0; i < prm->len; i++) {
-        tmp[i] = malloc(8 * prm->n * sizeof *tmp[i]);
-
         setChainAddress(&skADRS, i);
-        PRF(PK_seed, SK_seed, &skADRS, sk, 8 * prm->n);
+        PRF(PK_seed, SK_seed, &skADRS, sk, prm->n);
         setChainAddress(&adrs, i);
-        chain(prm, sk, 0, prm->w - 1, PK_seed, &adrs, tmp[i]);
+        chain(prm, sk, 0, prm->w - 1, PK_seed, &adrs, tmp + i * prm->n);
     }
 
     ADRS wotspkADRS;
     wotspkADRS = adrs;
     setTypeAndClear(&wotspkADRS, prm->WOTS_PK);
     setKeyPairAddress(&wotspkADRS, getKeyPairAddress(&adrs));
-    Tlen(PK_seed, &wotspkADRS, tmp, prm->len, pk, 8 * prm->n);
-
-    for (int i = 0; i < prm->len; i++) {
-        free(tmp[i]);
-    }
-    free(tmp);
+    Tlen(PK_seed, &wotspkADRS, tmp, pk, prm->n);
 }
 
 // Algorithm 7 (Generates a WOTS+ signature on an n-byte message)
-void wots_sign(Parameters *prm, const unsigned char *M, const unsigned char *SK_seed, const unsigned char *PK_seed, ADRS adrs, unsigned char **sig) {
+void wots_sign(Parameters *prm, const unsigned char *M, const unsigned char *SK_seed, const unsigned char *PK_seed, ADRS adrs, unsigned char *sig) {
     unsigned int csum = 0;
-    unsigned char *msg = malloc(prm->len * sizeof(unsigned char));
+    unsigned char msg[prm->len];
 
     base_2b(M, prm->lg_w, prm->len1, msg);       // Convert message to base w
     for (int i = 0; i < prm->len1; i++) {
@@ -103,28 +94,26 @@ void wots_sign(Parameters *prm, const unsigned char *M, const unsigned char *SK_
     // since len2 and lg_w are static across all parameter sets
     unsigned char csum_bytes[2];
     toByte(csum, 2, csum_bytes);
-    base_2b(csum_bytes, prm->lg_w, prm->len2, &msg[prm->len1]); // Convert to base w
+    base_2b(csum_bytes, prm->lg_w, prm->len2, msg + prm->len1); // Convert to base w
 
     ADRS skADRS;
     skADRS = adrs;
     setTypeAndClear(&skADRS, prm->WOTS_PRF);
     setKeyPairAddress(&skADRS, getKeyPairAddress(&adrs));
 
-    unsigned char sk[prm->n * 8];
+    unsigned char sk[prm->n];
     for (int i = 0; i < prm->len; i++) {
         setChainAddress(&skADRS, i);
-        PRF(PK_seed, SK_seed, &skADRS, sk, prm->n * 8);
+        PRF(PK_seed, SK_seed, &skADRS, sk, prm->n);
         setChainAddress(&adrs, i);
-        chain(prm, sk, 0, msg[i], PK_seed, &adrs, sig[i]);
+        chain(prm, sk, 0, msg[i], PK_seed, &adrs, sig + i * prm->n);
     }
-
-    free(msg);
 }
 
 // Algorithm 8 (Computes a WOTS+ public key from a message and its signature)
-void wots_pkFromSig(Parameters *prm, unsigned char **sig, const unsigned char *M, const unsigned char *PK_seed, ADRS adrs, unsigned char *pksig) {
+void wots_pkFromSig(Parameters *prm, unsigned char *sig, const unsigned char *M, const unsigned char *PK_seed, ADRS adrs, unsigned char *pksig) {
     unsigned int csum = 0;
-    unsigned char *msg = malloc(prm->len * sizeof(unsigned char));
+    unsigned char msg[prm->len];
 
     base_2b(M, prm->lg_w, prm->len1, msg);       // Convert message to base w
     for (int i = 0; i < prm->len1; i++) {
@@ -134,13 +123,12 @@ void wots_pkFromSig(Parameters *prm, unsigned char **sig, const unsigned char *M
     csum <<= 4;
     unsigned char csum_bytes[2];
     toByte(csum, 2, csum_bytes);
-    base_2b(csum_bytes, prm->lg_w, prm->len2, &msg[prm->len1]); // Convert to base w
+    base_2b(csum_bytes, prm->lg_w, prm->len2, msg + prm->len1); // Convert to base w
 
-    unsigned char **tmp = malloc(prm->len * sizeof(unsigned char *));
+    unsigned char tmp[prm->len * prm->n];
     for (int i = 0; i < prm->len; i++) {
-        tmp[i] = malloc(8 * prm->n);
         setChainAddress(&adrs, i);
-        chain(prm, sig[i], msg[i], prm->w - 1 - msg[i], PK_seed, &adrs, tmp[i]);
+        chain(prm, sig + i * prm->n, msg[i], prm->w - 1 - msg[i], PK_seed, &adrs, tmp + i * prm->n);
     }
 
     ADRS wotspkADRS;
@@ -148,12 +136,5 @@ void wots_pkFromSig(Parameters *prm, unsigned char **sig, const unsigned char *M
     setTypeAndClear(&wotspkADRS, prm->WOTS_PK);
     setKeyPairAddress(&wotspkADRS, getKeyPairAddress(&adrs));
 
-    Tlen(PK_seed, &wotspkADRS, tmp, prm->len, pksig, 8 * prm->n);
-
-    // Free allocated memory
-    for (int i = 0; i < prm->len; i++) {
-        free(tmp[i]);
-    }
-    free(tmp);
-    free(msg);
+    Tlen(PK_seed, &wotspkADRS, tmp, pksig, prm->n);
 }

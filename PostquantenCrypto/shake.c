@@ -2,9 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <gcrypt.h>
-
 #include "adrs.h"
-/*#include "params.h"*/
 
 /*
 // Helper function to perform SHAKE256 hash
@@ -58,31 +56,34 @@ unsigned char* PRF_msg(const unsigned char* sk_prf, const unsigned char* opt_ran
 
     return shake256_hash(data, lengths, 3, 8 * params.n);
 }
-
-
-unsigned char* H(const unsigned char* pk_seed, const ADRS* adrs,
-                const unsigned char* M2, size_t M2_len) {
-    unsigned char* adrs_bytes = getADRS(adrs);
-    const void* data[] = {pk_seed, adrs_bytes, M2};
-    size_t lengths[] = {PK_SEED_LEN, ADRS_LEN, M2_len};
-
-    unsigned char* result = shake256_hash(data, lengths, 3, 8 * params.n);
-    free(adrs_bytes);
-    return result;
-}
 */
 
-void F(const unsigned char *pk_seed, const ADRS *adrs, const unsigned char *M1, unsigned char *buffer, int out_len)
+void H(const unsigned char *pk_seed, const ADRS *adrs, const unsigned char *M2, unsigned char *buffer, int out_len)
 {
     // copy shake256 hash value into buff with len out_len
-
-    /*unsigned char digest[out_len];*/
     // initialize hash context
     gcry_md_hd_t h;
     gcry_md_open(&h, GCRY_MD_SHAKE256, GCRY_MD_FLAG_SECURE);
 
     // add data to context
-    gcry_md_write(h, pk_seed, strlen((char *) pk_seed));
+    gcry_md_write(h, pk_seed, sizeof pk_seed / sizeof pk_seed[0]);
+    gcry_md_write(h, adrs->adrs, ADRS_SIZE);
+    gcry_md_write(h, M2, sizeof M2 / sizeof M2[0]);
+
+    // get the result
+    gcry_md_extract(h, GCRY_MD_SHAKE256, buffer, out_len);
+    gcry_md_close(h);
+}
+
+void F(const unsigned char *pk_seed, const ADRS *adrs, const unsigned char *M1, unsigned char *buffer, int out_len)
+{
+    // copy shake256 hash value into buff with len out_len
+    // initialize hash context
+    gcry_md_hd_t h;
+    gcry_md_open(&h, GCRY_MD_SHAKE256, GCRY_MD_FLAG_SECURE);
+
+    // add data to context
+    gcry_md_write(h, pk_seed, sizeof pk_seed / sizeof pk_seed[0]);
     gcry_md_write(h, adrs->adrs, ADRS_SIZE);
     gcry_md_write(h, M1, sizeof M1 / sizeof M1[0]);
 
@@ -91,7 +92,7 @@ void F(const unsigned char *pk_seed, const ADRS *adrs, const unsigned char *M1, 
     gcry_md_close(h);
 }
 
-void Tlen(const unsigned char *pk_seed, const ADRS *adrs, unsigned char **Ml, int len, unsigned char *buffer, int out_len)
+void Tlen(const unsigned char *pk_seed, const ADRS *adrs, unsigned char *Ml, unsigned char *buffer, int out_len)
 {
     // initialize hash context
     gcry_md_hd_t h;
@@ -100,11 +101,7 @@ void Tlen(const unsigned char *pk_seed, const ADRS *adrs, unsigned char **Ml, in
     // add data to context
     gcry_md_write(h, pk_seed, sizeof pk_seed / sizeof pk_seed[0]);
     gcry_md_write(h, adrs->adrs, ADRS_SIZE);
-    for (int i = 0; i < len; i++) {
-        for (int j = 0; j < 8 * 16; j++) {
-            gcry_md_putc(h, Ml[i][j]);
-        }
-    }
+    gcry_md_write(h, Ml, sizeof Ml / sizeof Ml[0]);
 
     // get the result
     gcry_md_extract(h, GCRY_MD_SHAKE256, buffer, out_len);

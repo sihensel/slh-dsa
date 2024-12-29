@@ -1,113 +1,91 @@
 #include <math.h>
-#include "params.h"
-#include "adrs.h"
-#include "shake.h"
+#include <string.h>
 #include "wots.h"
+#include "shake.h"
+#include "xmss.h"
 
 // algorithm 9
-unsigned char* xmss_node(unsigned char* sk_seed, int i, int z,
-                        unsigned char* pk_seed, ADRS* adrs) {
-    unsigned char* node;
+void xmss_node(Parameters *prm, const unsigned char* sk_seed, int i, int z, const unsigned char* pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned char node[prm->n];
 
     if (z == 0) {
-        adrs_setTypeAndClear(adrs, params.WOTS_HASH);
-        adrs_setKeyPairAddress(adrs, i);
-        node = wots_pkGen(sk_seed, pk_seed, adrs);
+        setTypeAndClear(&adrs, prm->WOTS_HASH);
+        setKeyPairAddress(&adrs, i);
+        wots_pkGen(prm, sk_seed, pk_seed, adrs, node);
     } else {
-        unsigned char* lnode = xmss_node(sk_seed, i * 2, z - 1, pk_seed, adrs);
-        unsigned char* rnode = xmss_node(sk_seed, i * 2 + 1, z - 1, pk_seed, adrs);
+        unsigned char lnode[prm->n];
+        unsigned char rnode[prm->n];
+        xmss_node(prm, sk_seed, i * 2,     z - 1, pk_seed, adrs, lnode);
+        xmss_node(prm, sk_seed, i * 2 + 1, z - 1, pk_seed, adrs, rnode);
 
-        adrs_setTypeAndClear(adrs, params.TREE);
-        adrs_setTreeHeight(adrs, z);
-        adrs_setTreeIndex(adrs, i);
+        setTypeAndClear(&adrs, prm->TREE);
+        setTreeHeight(&adrs, z);
+        setTreeIndex(&adrs, i);
 
         // Concatenate lnode and rnode
-        unsigned char combined[2 * N];
-        memcpy(combined, lnode, N);
-        memcpy(combined + N, rnode, N);
+        unsigned char combined[prm->n * 2];
+        memcpy(combined, lnode, prm->n);
+        memcpy(combined + prm->n, rnode, prm->n);
 
-        node = H(pk_seed, adrs, combined);
-
-        free(lnode);
-        free(rnode);
+        H(pk_seed, &adrs, combined, node, prm->n);
     }
-    return node;
+    memcpy(buffer, node, prm->n);
 }
 
 // algorithm 10
-unsigned char** xmss_sign(unsigned char* M, unsigned char* sk_seed,
-                         int idx, unsigned char* pk_seed, ADRS* adrs) {
-    unsigned char** AUTH = (unsigned char**)malloc(params.h_ * sizeof(unsigned char*));
-    for (int j = 0; j < params.h_; j++) {
-        int k = (int)floor(idx / pow(2, j)) ^ 1;
+void xmss_sign(Parameters *prm, const unsigned char *M, const unsigned char *sk_seed, int idx, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned char AUTH[prm->h_ * prm->n];
+    for (int j = 0; j < prm->h_; j++) {
+        int k = (int) floor(idx / pow(2, j)) ^ 1;
         // Alternative: int k = (idx >> j) ^ 1;
-        AUTH[j] = xmss_node(sk_seed, k, j, pk_seed, adrs);
+        xmss_node(prm, sk_seed, k, j, pk_seed, adrs, AUTH + j * prm->n);
     }
 
-    adrs_setTypeAndClear(adrs, params.WOTS_HASH);
-    adrs_setKeyPairAddress(adrs, idx);
-    unsigned char** sig = wots_sign(M, sk_seed, pk_seed, adrs);
+    setTypeAndClear(&adrs, prm->WOTS_HASH);
+    setKeyPairAddress(&adrs, idx);
+    unsigned char sig[prm->len * prm->n];
+    wots_sign(prm, M, sk_seed, pk_seed, adrs, sig);
 
-    // Combine sig and AUTH into sig_xmss
-    unsigned char** sig_xmss = (unsigned char**)malloc((params.len + params.h_) * sizeof(unsigned char*));
-    memcpy(sig_xmss, sig, params.len * sizeof(unsigned char*));
-    memcpy(sig_xmss + params.len, AUTH, params.h_ * sizeof(unsigned char*));
-
-    free(AUTH);
-    free(sig);
-    return sig_xmss;
+    memcpy(buffer, sig, prm->len * prm->n);
+    memcpy(buffer + prm->len * prm->n, AUTH, prm->h_ * prm->n);
 }
 
 // algorithm 11
-unsigned char* xmss_pkFromSig(int idx, unsigned char** sig_xmss,
-                             unsigned char* M, unsigned char* pk_seed, ADRS* adrs) {
-    unsigned char* node[2];
-    node[0] = (unsigned char*)malloc(N * sizeof(unsigned char));
-    node[1] = (unsigned char*)malloc(N * sizeof(unsigned char));
+void xmss_pkFromSig(Parameters *prm, int idx, const unsigned char *sig_xmss, const unsigned char *M, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned char node_0[prm->n];
+    unsigned char node_1[prm->n];
 
-    adrs_setTypeAndClear(adrs, params.WOTS_HASH);
-    adrs_setKeyPairAddress(adrs, idx);
+    setTypeAndClear(&adrs, prm->WOTS_HASH);
+    setKeyPairAddress(&adrs, idx);
 
-    unsigned char** sig = getWOTSSig(sig_xmss);
-    unsigned char** AUTH = getXMSSAUTH(sig_xmss);
+    unsigned char sig[prm->len * prm->n];
+    unsigned char AUTH[prm->h_ * prm->n];
+    // NOTE this replaces getWOTSSig and getXMSSAUTH
+    memcpy(sig, sig_xmss, prm->len * prm->n);
+    memcpy(AUTH, sig_xmss + prm->len * prm->n, prm->h_ * prm->n);
 
-    memcpy(node[0], wots_pkFromSig(sig, M, pk_seed, adrs), N);
-    adrs_setTypeAndClear(adrs, params.TREE);
-    adrs_setTreeIndex(adrs, idx);
+    wots_pkFromSig(prm, sig, M, pk_seed, adrs, node_0);
+    setTypeAndClear(&adrs, prm->TREE);
+    setTreeIndex(&adrs, idx);
 
-    for (int k = 0; k < params.h_; k++) {
-        adrs_setTreeHeight(adrs, k + 1);
-        if ((int)floor(idx / pow(2, k)) % 2 == 0) {
-            adrs_setTreeIndex(adrs, adrs_getTreeIndex(adrs) / 2);
-            unsigned char combined[2 * N];
-            memcpy(combined, node[0], N);
-            memcpy(combined + N, AUTH[k], N);
-            memcpy(node[1], H(pk_seed, adrs, combined), N);
+    unsigned char combined[2 * prm->n];
+    for (int k = 0; k < prm->h_; k++) {
+        setTreeHeight(&adrs, k + 1);
+        if ((int) floor(idx / pow(2, k)) % 2 == 0) {
+            setTreeIndex(&adrs, getTreeIndex(&adrs) / 2);
+            memcpy(combined, node_0, prm->n);
+            memcpy(combined + prm->n, AUTH + k * prm->n, prm->n);
+            H(pk_seed, &adrs, combined, node_1, prm->n);
         } else {
-            adrs_setTreeIndex(adrs, (adrs_getTreeIndex(adrs) - 1) / 2);
-            unsigned char combined[2 * N];
-            memcpy(combined, AUTH[k], N);
-            memcpy(combined + N, node[0], N);
-            memcpy(node[1], H(pk_seed, adrs, combined), N);
+            setTreeIndex(&adrs, (getTreeIndex(&adrs) - 1) / 2);
+            memcpy(combined, AUTH + k * prm->n, prm->n);
+            memcpy(combined + prm->n, node_0, prm->n);
+            H(pk_seed, &adrs, combined, node_1, prm->n);
         }
-        memcpy(node[0], node[1], N);
+        memcpy(node_0, node_1, prm->n);
     }
-
-    unsigned char* result = (unsigned char*)malloc(N * sizeof(unsigned char));
-    memcpy(result, node[0], N);
-    free(node[1]);
-    return result;
+    memcpy(buffer, node_0, prm->n);
 }
-
-unsigned char** getWOTSSig(unsigned char** sig_xmss) {
-    unsigned char** wots_sig = (unsigned char**)malloc(params.len * sizeof(unsigned char*));
-    memcpy(wots_sig, sig_xmss, params.len * sizeof(unsigned char*));
-    return wots_sig;
-}
-
-unsigned char** getXMSSAUTH(unsigned char** sig_xmss) {
-    unsigned char** auth = (unsigned char**)malloc(params.h_ * sizeof(unsigned char*));
-    memcpy(auth, sig_xmss + params.len, params.h_ * sizeof(unsigned char*));
-    return auth;
-}
-

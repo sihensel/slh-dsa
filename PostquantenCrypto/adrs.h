@@ -1,3 +1,6 @@
+#ifndef ADRS_H
+#define ADRS_H
+
 #include <stdint.h>
 
 #define ADRS_SIZE 32
@@ -31,3 +34,5 @@ void setTreeIndex(ADRS *adrs, int i);
 int getKeyPairAddress(ADRS *adrs);
 
 int getTreeIndex(ADRS *adrs);
+
+#endif

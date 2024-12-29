@@ -1,3 +1,6 @@
+#ifndef PARAMS_H
+#define PARAMS_H
+
 // Structure to hold parameters
 typedef struct {
     int WOTS_HASH;
@@ -23,3 +26,5 @@ typedef struct {
 
 /*void setup_parameter_set(const char* name);*/
 void setup_parameter_set(Parameters *prm, const char* name);
+
+#endif
