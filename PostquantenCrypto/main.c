@@ -1,75 +1,54 @@
 /*
    compile with:
-   gcc -lm -lgcrypt main.c xmss.c wots.c adrs.c shake.c params.c -o main
+   gcc -lm -lgcrypt main.c external.c internal.c fors.c hypertree.c xmss.c wots.c adrs.c shake.c params.c -o main
 */
 
 #include <stdio.h>
 #include <string.h>
-#include "wots.h"
-#include "xmss.h"
+
+#include "params.h"
+#include "external.h"
 
 int main(void)
 {
+    // init variables
     Parameters prm;
-    setup_parameter_set(&prm, "SLH-DSA-SHAKE-128s");
+    setup_parameter_set(&prm, "SLH-DSA-SHAKE-128f");
 
-    ADRS adrs;
-    initADRS(&adrs);
-    unsigned char pk[prm.n];
-    unsigned char sk_seed[prm.n];
-    unsigned char pk_seed[prm.n];
+    unsigned char SK[prm.n * 4];
+    unsigned char PK[prm.n * 2];
+    memset(SK, 0, prm.n * 4);
+    memset(PK, 0, prm.n * 2);
 
-    memset(pk, 0, prm.n);
-    memset(sk_seed, 0, prm.n);
-    memset(pk_seed, 0, prm.n);
+    unsigned char M[10];
+    unsigned char ctx[1];
+    unsigned int sig_len = prm.n + (prm.k * (1 + prm.a) * prm.n) + ((prm.h + prm.d * prm.len) * prm.n);
+    unsigned char SIG[sig_len];
+    memset(M, 0, sizeof M);
+    memset(ctx, 0, sizeof ctx);
+    memset(SIG, 0, sizeof SIG);
 
-    wots_pkGen(&prm, sk_seed, pk_seed, adrs, pk);
-    for (int i = 0; i < prm.n; i++) {
-        printf("%02x", pk[i]);
-    }
-    printf("\n");
+    // generate keys
+    slh_keygen(&prm, SK, PK);
 
-    unsigned char M[128];
-    unsigned char sig[prm.len * prm.n];
-    memset(M, 0, 128);
-    memset(sig, 0, prm.len * prm.n);
+    // test signing M
+    slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, SK, SIG);
 
-    wots_sign(&prm, M, sk_seed, pk_seed, adrs, sig);
-    for (int i = 0; i < prm.len * prm.n; i++) {
-        printf("%02x", sig[i]);
-    }
-    printf("\n");
+    bool result = slh_verify(&prm, M, sizeof M, SIG, sizeof SIG, ctx, sizeof ctx, PK);
 
-    unsigned char pksig[prm.n];
-    memset(pksig, 0, prm.n);
-    wots_pkFromSig(&prm, sig, M, pk_seed, adrs, pksig);
-    for (int i = 0; i < prm.n; i++) {
-        printf("%02x", pksig[i]);
-    }
-    printf("\n");
+    if (result == 0) printf("Signature verification successful\n");
+    else printf("Signature invalid\n");
 
-    unsigned char node[prm.n];
-    memset(node, 0 , prm.n);
-    xmss_node(&prm, sk_seed, 0, 0, pk_seed, adrs, node);
-    for (int i = 0; i < prm.n; i++) {
-        printf("%02x", node[i]);
-    }
-    printf("\n");
+    // test signing hash of M
+    memset(M, 0, sizeof M);
+    memset(ctx, 0, sizeof ctx);
+    memset(SIG, 0, sizeof SIG);
 
-    unsigned char sig_xmss[(prm.len + prm.h_) * prm.n];
-    xmss_sign(&prm, M, sk_seed, 0, pk_seed, adrs, sig_xmss);
-    for (int i = 0; i < (prm.len + prm.h_) * prm.n; i++) {
-        printf("%02x", sig_xmss[i]);
-    }
-    printf("\n");
+    hash_slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, "SHA-256", SK, SIG);
+    result = hash_slh_verify(&prm, M, sizeof M, SIG, sizeof SIG, ctx, sizeof ctx, "SHA-256", PK);
 
-    unsigned char pksig_new[prm.n];
-    memset(pksig_new, 0, prm.n);
-    xmss_pkFromSig(&prm, 0, sig_xmss, M, pk_seed, adrs, pksig_new);
-    for (int i = 0; i < prm.n; i++) {
-        printf("%02x", pksig_new[i]);
-    }
-    printf("\n");
+    if (result == 0) printf("Signature verification successful\n");
+    else printf("Signature invalid\n");
 
     return 0;
 }

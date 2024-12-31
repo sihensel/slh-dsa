@@ -1,117 +1,151 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <stdlib.h>
-#include <openssl/sha.h> // Für Hash-Funktionen
+#include <string.h>
 
-#include "params.h"          // Parameterdatei
-#include "adrs.h"            // Hilfsfunktionen für Adressen
-#include "internal.h"        // Interne SLH-DSA Funktionen
+#include "adrs.h"
+#include "params.h"
+#include "internal.h"
+#include "shake.h"
 
 #define MAX_CTX_LENGTH 255
 
 // Algorithmus 21: Generiert ein SLH-DSA Schlüsselpaar
-int slh_keygen(uint8_t **SK, uint8_t **PK) {
-    uint8_t SK_seed[PARAM_N];
-    uint8_t SK_prf[PARAM_N];
-    uint8_t PK_seed[PARAM_N];
+void slh_keygen(Parameters *prm, unsigned char *SK, unsigned char *PK)
+{
+    unsigned char SK_seed[prm->n];
+    unsigned char SK_prf[prm->n];
+    unsigned char PK_seed[prm->n];
 
-    // Zufällige Seeds generieren
-    if (!RAND_bytes(SK_seed, PARAM_N) || !RAND_bytes(SK_prf, PARAM_N) || !RAND_bytes(PK_seed, PARAM_N)) {
-        return -1; // Fehler beim Generieren
-    }
+    arc4random_buf(SK_seed, sizeof SK_seed);
+    arc4random_buf(SK_prf , sizeof SK_prf);
+    arc4random_buf(PK_seed, sizeof PK_seed);
 
-    // Aufruf der internen Schlüsselpaarfunktion
-    return slh_keygen_internal(SK_seed, SK_prf, PK_seed, SK, PK);
+    slh_keygen_internal(prm, SK_seed, SK_prf, PK_seed, SK, PK);
 }
 
 // Algorithmus 22: Generiert eine reine SLH-DSA Signatur
-int slh_sign(const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const uint8_t *SK, uint8_t **SIG) {
-    if (ctx_len > MAX_CTX_LENGTH) return -1;
+void slh_sign(Parameters *prm, const unsigned char *M, size_t M_len, const unsigned char *ctx, size_t ctx_len, const unsigned char *SK, unsigned char *SIG)
+{
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Context is longer that %d\n", MAX_CTX_LENGTH);
+        return;
+    }
 
-    uint8_t addrnd[PARAM_N];
-    if (!RAND_bytes(addrnd, PARAM_N)) return -1;
+    unsigned char addrnd[prm->n];
+    arc4random_buf(addrnd, sizeof addrnd);
 
-    uint8_t M_prime[1 + 1 + MAX_CTX_LENGTH + M_len];
+    unsigned char M_prime[1 + 1 + ctx_len + M_len];
     M_prime[0] = 0;
-    M_prime[1] = (uint8_t)ctx_len;
+    toByte(ctx_len, 1, M_prime + 1);
 
     memcpy(M_prime + 2, ctx, ctx_len);
     memcpy(M_prime + 2 + ctx_len, M, M_len);
 
-    return slh_sign_internal(M_prime, sizeof(M_prime), SK, addrnd, SIG);
+    slh_sign_internal(prm, M_prime, sizeof M_prime, SK, addrnd, SIG);
 }
 
 // Algorithmus 23: Generiert eine vorgehashte SLH-DSA Signatur
-int hash_slh_sign(const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *SK, uint8_t **SIG) {
-    if (ctx_len > MAX_CTX_LENGTH) return -1;
+void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *SK, uint8_t *SIG)
+{
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Context is longer that %d\n", MAX_CTX_LENGTH);
+        return;
+    }
 
-    uint8_t addrnd[PARAM_N];
-    if (!RAND_bytes(addrnd, PARAM_N)) return -1;
+    unsigned char addrnd[prm->n];
+    arc4random_buf(addrnd, sizeof addrnd);
 
     uint8_t OID[11];
-    uint8_t PHM[SHA512_DIGEST_LENGTH];
+    uint8_t PHM[64];
+    memset(PHM, 0, sizeof PHM);
 
     if (strcmp(PH, "SHA-256") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01", 11);
-        SHA256(M, M_len, PHM);
+        SHA_256(M, M_len, PHM);
     } else if (strcmp(PH, "SHA-512") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03", 11);
-        SHA512(M, M_len, PHM);
+        SHA_512(M, M_len, PHM);
+    } else if (strcmp(PH, "SHAKE128") == 0) {
+        memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x0B", 11);
+        SHAKE_128(M, M_len, PHM, 32);
+    } else if (strcmp(PH, "SHAKE256") == 0) {
+        memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x0C", 11);
+        SHAKE_256(M, M_len, PHM, 64);
     } else {
-        return -1; // Unsupported hash function
+        printf("Unsupported hash function\n");
+        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', SHAKE256'\n");
+        return;
     }
 
-    uint8_t M_prime[1 + 1 + MAX_CTX_LENGTH + 11 + sizeof(PHM)];
+    uint8_t M_prime[1 + 1 + ctx_len + 11 + sizeof PHM];
     M_prime[0] = 1;
-    M_prime[1] = (uint8_t)ctx_len;
+    toByte(ctx_len, 1, M_prime + 1);
 
     memcpy(M_prime + 2, ctx, ctx_len);
-    memcpy(M_prime + 2 + ctx_len, OID, 11);
-    memcpy(M_prime + 2 + ctx_len + 11, PHM, sizeof(PHM));
+    memcpy(M_prime + 2 + ctx_len, OID, sizeof OID);
+    memcpy(M_prime + 2 + ctx_len + sizeof OID, PHM, sizeof PHM);
 
-    return slh_sign_internal(M_prime, sizeof(M_prime), SK, addrnd, SIG);
+    slh_sign_internal(prm, M_prime, sizeof M_prime, SK, addrnd, SIG);
 }
 
 // Algorithmus 24: Verifiziert eine reine SLH-DSA Signatur
-int slh_verify(const uint8_t *M, size_t M_len, const uint8_t *SIG, size_t SIG_len, const uint8_t *ctx, size_t ctx_len, const uint8_t *PK) {
-    if (ctx_len > MAX_CTX_LENGTH) return 0;
+bool slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, const uint8_t *ctx, size_t ctx_len, const uint8_t *PK)
+{
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Context is longer that %d\n", MAX_CTX_LENGTH);
+        return 0;
+    }
 
-    uint8_t M_prime[1 + 1 + MAX_CTX_LENGTH + M_len];
+    uint8_t M_prime[1 + 1 + ctx_len + M_len];
     M_prime[0] = 0;
-    M_prime[1] = (uint8_t)ctx_len;
+    toByte(ctx_len, 1, M_prime + 1);
 
     memcpy(M_prime + 2, ctx, ctx_len);
     memcpy(M_prime + 2 + ctx_len, M, M_len);
 
-    return slh_verify_internal(M_prime, sizeof(M_prime), SIG, SIG_len, PK);
+    bool result = slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
+    return result;
 }
 
 // Algorithmus 25: Verifiziert eine vorgehashte SLH-DSA Signatur
-int hash_slh_verify(const uint8_t *M, size_t M_len, const uint8_t *SIG, size_t SIG_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *PK) {
-    if (ctx_len > MAX_CTX_LENGTH) return 0;
+bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *PK)
+{
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Context is longer that %d\n", MAX_CTX_LENGTH);
+        return 1;
+    }
 
     uint8_t OID[11];
-    uint8_t PHM[SHA512_DIGEST_LENGTH];
+    uint8_t PHM[64];
+    memset(PHM, 0, sizeof PHM);
 
     if (strcmp(PH, "SHA-256") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01", 11);
-        SHA256(M, M_len, PHM);
+        SHA_256(M, M_len, PHM);
     } else if (strcmp(PH, "SHA-512") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x03", 11);
-        SHA512(M, M_len, PHM);
+        SHA_512(M, M_len, PHM);
+    } else if (strcmp(PH, "SHAKE128") == 0) {
+        memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x0B", 11);
+        SHAKE_128(M, M_len, PHM, 32);
+    } else if (strcmp(PH, "SHAKE256") == 0) {
+        memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x0C", 11);
+        SHAKE_256(M, M_len, PHM, 64);
     } else {
-        return 0; // Unsupported hash function
+        printf("Unsupported hash function\n");
+        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', SHAKE256'\n");
+        return 1;
     }
 
-    uint8_t M_prime[1 + 1 + MAX_CTX_LENGTH + 11 + sizeof(PHM)];
+    uint8_t M_prime[1 + 1 + ctx_len + 11 + sizeof PHM];
     M_prime[0] = 1;
-    M_prime[1] = (uint8_t)ctx_len;
+    toByte(ctx_len, 1, M_prime + 1);
 
     memcpy(M_prime + 2, ctx, ctx_len);
-    memcpy(M_prime + 2 + ctx_len, OID, 11);
-    memcpy(M_prime + 2 + ctx_len + 11, PHM, sizeof(PHM));
+    memcpy(M_prime + 2 + ctx_len, OID, sizeof OID);
+    memcpy(M_prime + 2 + ctx_len + sizeof OID, PHM, sizeof PHM);
 
-    return slh_verify_internal(M_prime, sizeof(M_prime), SIG, SIG_len, PK);
+    bool result = slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
+    return result;
 }
-

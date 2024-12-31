@@ -1,90 +1,80 @@
+#include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <string.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include "params.h"
 #include "adrs.h"
 #include "xmss.h"
 
-// Get one XMSS signature (WOTS+ sig and authentication path) from a hypertree signature
-// Params:
-//     sig_ht: hypertree signature
-//     idx:    index of the XMSS signature in sig_ht
-uint8_t* getXMSSSignature(uint8_t* sig_ht, int idx) {
-    // hypertree signatures contain d XMSS signatures
-    // each XMSS signature is h' + len elements
-    int start = idx * (params.h_ + params.len);
-    int end = (idx + 1) * (params.h_ + params.len);
-
-    size_t sig_size = end - start;
-    uint8_t* result = (uint8_t*)malloc(sig_size);
-    memcpy(result, sig_ht + start, sig_size);
-
-    return result;
-}
-
 // algorithm 12
 // Generates a hypertree signature
-uint8_t* ht_sign(const uint8_t* M, const uint8_t* sk_seed, const uint8_t* pk_seed,
-                 uint32_t idx_tree, uint32_t idx_leaf) {
+void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const uint8_t *pk_seed, uint32_t idx_tree, uint32_t idx_leaf, unsigned char *buffer)
+{
+    // length of one XMSS signature
+    unsigned int xmss_sig_len = (prm->len + prm->h_) * prm->n;
+
     ADRS adrs;
     initADRS(&adrs);
     setTreeAddress(&adrs, idx_tree);
 
-    uint8_t* sig_tmp = xmss_sign(M, sk_seed, idx_leaf, pk_seed, &adrs);
-    size_t sig_size = (params.h_ + params.len) * params.d;
-    uint8_t* sig_ht = (uint8_t*)malloc(sig_size);
-    memcpy(sig_ht, sig_tmp, params.h_ + params.len);
+    unsigned char sig_tmp[xmss_sig_len];
+    unsigned char sig_ht[xmss_sig_len * prm->d];
+    xmss_sign(prm, M, sk_seed, idx_leaf, pk_seed, adrs, sig_tmp);
+    memcpy(sig_ht, sig_tmp, xmss_sig_len);
 
-    uint8_t* root = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, &adrs);
-    free(sig_tmp);
+    unsigned char root[prm->n];
+    xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, root);
 
-    for (int j = 1; j < params.d; j++) {
-        idx_leaf = idx_tree % (1 << params.h_);
-        idx_tree = idx_tree >> params.h_;
+    for (int j = 1; j < prm->d; j++) {
+        idx_leaf = idx_tree % (int) pow(2, prm->h_);
+        idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
 
-        sig_tmp = xmss_sign(root, sk_seed, idx_leaf, pk_seed, &adrs);
-        memcpy(sig_ht + j * (params.h_ + params.len), sig_tmp, params.h_ + params.len);
+        xmss_sign(prm, root, sk_seed, idx_leaf, pk_seed, adrs, sig_tmp);
+        memcpy(sig_ht + j * xmss_sig_len, sig_tmp, xmss_sig_len);
 
-        if (j < params.d - 1) {
-            uint8_t* new_root = xmss_pkFromSig(idx_leaf, sig_tmp, root, pk_seed, &adrs);
-            free(root);
-            root = new_root;
+        if (j < prm->d - 1) {
+            xmss_pkFromSig(prm, idx_leaf, sig_tmp, root, pk_seed, adrs, root);
         }
-        free(sig_tmp);
     }
-    free(root);
-    return sig_ht;
+    /*
+    for (int i = 0; i < prm->n; i++) {
+        printf("%02x", root[i]);
+    }
+    printf("\n");
+    */
+    memcpy(buffer, sig_ht, xmss_sig_len * prm->d);
 }
 
 // algorithm 13
 // Verifies a hypertree signature
-bool ht_verify(const uint8_t* M, const uint8_t* sig_ht, const uint8_t* pk_seed,
-               uint32_t idx_tree, uint32_t idx_leaf, const uint8_t* pk_root) {
+bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const uint8_t *pk_seed, uint32_t idx_tree, uint32_t idx_leaf, const uint8_t *pk_root)
+{
+    // length of one XMSS signature
+    unsigned int xmss_sig_len = (prm->len + prm->h_) * prm->n;
+
     ADRS adrs;
     initADRS(&adrs);
     setTreeAddress(&adrs, idx_tree);
 
-    uint8_t* sig_tmp = getXMSSSignature(sig_ht, 0);
-    uint8_t* node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, &adrs);
-    free(sig_tmp);
+    unsigned char node[prm->n];
+    unsigned char sig_tmp[xmss_sig_len];
+    // NOTE this replaces getXMSSSignature
+    memcpy(sig_tmp, sig_ht, xmss_sig_len);
+    xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, node);
 
-    for (int j = 1; j < params.d; j++) {
-        idx_leaf = idx_tree % (1 << params.h_);
-        idx_tree = idx_tree >> params.h_;
+    for (int j = 1; j < prm->d; j++) {
+        idx_leaf = idx_tree % (int) pow(2, prm->h_);
+        idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
-
-        sig_tmp = getXMSSSignature(sig_ht, j);
-        uint8_t* new_node = xmss_pkFromSig(idx_leaf, sig_tmp, node, pk_seed, &adrs);
-        free(node);
-        node = new_node;
-        free(sig_tmp);
+        // NOTE this replaces getXMSSSignature
+        memcpy(sig_tmp, sig_ht + j * xmss_sig_len, xmss_sig_len);
+        xmss_pkFromSig(prm, idx_leaf, sig_tmp, node, pk_seed, adrs, node);
     }
 
-    bool result = (memcmp(node, pk_root, params.n) == 0);
-    free(node);
+    bool result = memcmp(node, pk_root, prm->n);
     return result;
 }
-

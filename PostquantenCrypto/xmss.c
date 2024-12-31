@@ -28,7 +28,7 @@ void xmss_node(Parameters *prm, const unsigned char* sk_seed, int i, int z, cons
         memcpy(combined, lnode, prm->n);
         memcpy(combined + prm->n, rnode, prm->n);
 
-        H(pk_seed, &adrs, combined, node, prm->n);
+        H(prm, pk_seed, &adrs, combined, node);
     }
     memcpy(buffer, node, prm->n);
 }
@@ -78,12 +78,12 @@ void xmss_pkFromSig(Parameters *prm, int idx, const unsigned char *sig_xmss, con
             setTreeIndex(&adrs, getTreeIndex(&adrs) / 2);
             memcpy(combined, node_0, prm->n);
             memcpy(combined + prm->n, AUTH + k * prm->n, prm->n);
-            H(pk_seed, &adrs, combined, node_1, prm->n);
+            H(prm, pk_seed, &adrs, combined, node_1);
         } else {
             setTreeIndex(&adrs, (getTreeIndex(&adrs) - 1) / 2);
             memcpy(combined, AUTH + k * prm->n, prm->n);
             memcpy(combined + prm->n, node_0, prm->n);
-            H(pk_seed, &adrs, combined, node_1, prm->n);
+            H(prm, pk_seed, &adrs, combined, node_1);
         }
         memcpy(node_0, node_1, prm->n);
     }

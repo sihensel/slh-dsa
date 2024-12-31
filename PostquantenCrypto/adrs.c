@@ -3,7 +3,8 @@
 #include "adrs.h"
 
 // Hilfsfunktion: Wandelt eine Ganzzahl in ein Byte-Array um
-void toByte(int x, int n, uint8_t *S) {
+void toByte(unsigned int x, unsigned int n, uint8_t *S)
+{
     for (int i = 0; i < n; i++) {
         S[n - 1 - i] = x % 256;
         x >>= 8;

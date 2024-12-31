@@ -49,7 +49,7 @@ void chain(Parameters *prm, const unsigned char *X, int i, int s, const unsigned
 
     for (int j = i; j < i + s; j++) {
         setHashAddress(adrs, j);
-        F(PK_seed, adrs, tmp, tmp, prm->n);
+        F(prm, PK_seed, adrs, tmp, tmp);
     }
     memcpy(buffer, tmp, prm->n);
 }
@@ -66,7 +66,7 @@ void wots_pkGen(Parameters *prm, const unsigned char *SK_seed, const unsigned ch
     unsigned char tmp[prm->len * prm->n];
     for (int i = 0; i < prm->len; i++) {
         setChainAddress(&skADRS, i);
-        PRF(PK_seed, SK_seed, &skADRS, sk, prm->n);
+        PRF(prm, PK_seed, SK_seed, &skADRS, sk);
         setChainAddress(&adrs, i);
         chain(prm, sk, 0, prm->w - 1, PK_seed, &adrs, tmp + i * prm->n);
     }
@@ -75,7 +75,7 @@ void wots_pkGen(Parameters *prm, const unsigned char *SK_seed, const unsigned ch
     wotspkADRS = adrs;
     setTypeAndClear(&wotspkADRS, prm->WOTS_PK);
     setKeyPairAddress(&wotspkADRS, getKeyPairAddress(&adrs));
-    Tlen(PK_seed, &wotspkADRS, tmp, pk, prm->n);
+    Tlen(prm, PK_seed, &wotspkADRS, tmp, prm->len * prm->n, pk);
 }
 
 // Algorithm 7 (Generates a WOTS+ signature on an n-byte message)
@@ -104,7 +104,7 @@ void wots_sign(Parameters *prm, const unsigned char *M, const unsigned char *SK_
     unsigned char sk[prm->n];
     for (int i = 0; i < prm->len; i++) {
         setChainAddress(&skADRS, i);
-        PRF(PK_seed, SK_seed, &skADRS, sk, prm->n);
+        PRF(prm, PK_seed, SK_seed, &skADRS, sk);
         setChainAddress(&adrs, i);
         chain(prm, sk, 0, msg[i], PK_seed, &adrs, sig + i * prm->n);
     }
@@ -136,5 +136,5 @@ void wots_pkFromSig(Parameters *prm, unsigned char *sig, const unsigned char *M,
     setTypeAndClear(&wotspkADRS, prm->WOTS_PK);
     setKeyPairAddress(&wotspkADRS, getKeyPairAddress(&adrs));
 
-    Tlen(PK_seed, &wotspkADRS, tmp, pksig, prm->n);
+    Tlen(prm, PK_seed, &wotspkADRS, tmp, prm->len * prm->n, pksig);
 }

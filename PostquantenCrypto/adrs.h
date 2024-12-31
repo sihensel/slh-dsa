@@ -9,7 +9,7 @@ typedef struct {
     uint8_t adrs[ADRS_SIZE]; // 32 Byte Address
 } ADRS;
 
-void toByte(int x, int n, uint8_t *S);
+void toByte(unsigned int x, unsigned int n, uint8_t *S);
 
 int toInt(uint8_t *X, int n);
 

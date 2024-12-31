@@ -1,157 +1,115 @@
 #include <string.h>
 #include <math.h>
-#include <stdlib.h>
 #include "params.h"
 #include "adrs.h"
 #include "shake.h"
 #include "wots.h"
 
 // algorithm 14
-unsigned char* fors_skGen(const unsigned char* sk_seed, const unsigned char* pk_seed,
-                         ADRS* adrs, int idx) {
-    /*
-    Generates a FORS private-key value
-
-    Params:
-        sk_seed     secret seed
-        pk_seed     public seed
-        ADRS        address
-        idx         secret key index
-    Returns:
-        n-byte FORS private key
-    */
+void fors_skGen(Parameters *prm, const unsigned char *sk_seed, const unsigned char *pk_seed, ADRS adrs, int idx, unsigned char *buffer)
+{
     ADRS sk_adrs;
-    memcpy(&sk_adrs, adrs, sizeof(ADRS));
-    setTypeAndClear(&sk_adrs, FORS_PRF);
-    setKeyPairAddress(&sk_adrs, getKeyPairAddress(adrs));
+    sk_adrs = adrs;
+    setTypeAndClear(&sk_adrs, prm->FORS_PRF);
+    setKeyPairAddress(&sk_adrs, getKeyPairAddress(&adrs));
     setTreeIndex(&sk_adrs, idx);
-    return PRF(pk_seed, sk_seed, &sk_adrs);
+    PRF(prm, pk_seed, sk_seed, &sk_adrs, buffer);
 }
 
 // Algorithm 15 (Computes the root of a Merkle subtree of FORS public values)
-unsigned char* fors_node(const unsigned char* SK_seed, int i, int z,
-                        const unsigned char* PK_seed, ADRS* ADRS) {
-    unsigned char* node;
-    node = malloc(N_BYTES);  // Assuming N_BYTES is the size of hash output
+void fors_node(Parameters *prm, const unsigned char *sk_seed, int i, int z, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned char node[prm->n];
 
     if (z == 0) {
-        unsigned char* sk = fors_skGen(SK_seed, PK_seed, ADRS, i);
-        setTreeHeight(ADRS, 0);
-        setTreeIndex(ADRS, i);
-        F(PK_seed, ADRS, sk, node);
-        free(sk);
+        unsigned char sk[prm->n];
+        fors_skGen(prm, sk_seed, pk_seed, adrs, i, sk);
+        setTreeHeight(&adrs, 0);
+        setTreeIndex(&adrs, i);
+        F(prm, pk_seed, &adrs, sk, node);
     } else {
-        unsigned char* lnode;
-        unsigned char* rnode;
-        unsigned char* concatenated_nodes;
+        unsigned char lnode[prm->n];
+        unsigned char rnode[prm->n];
+        unsigned char combined[2 * prm->n];
 
-        setTreeHeight(ADRS, z - 1);
-        lnode = fors_node(SK_seed, 2 * i, z - 1, PK_seed, ADRS);
+        fors_node(prm, sk_seed, 2 * i,     z - 1, pk_seed, adrs, lnode);
+        fors_node(prm, sk_seed, 2 * i + 1, z - 1, pk_seed, adrs, rnode);
 
-        setTreeHeight(ADRS, z - 1);
-        rnode = fors_node(SK_seed, 2 * i + 1, z - 1, PK_seed, ADRS);
+        setTreeHeight(&adrs, z);
+        setTreeIndex(&adrs, i);
 
-        setTreeHeight(ADRS, z);
-        setTreeIndex(ADRS, i);
+        memcpy(combined, lnode, prm->n);
+        memcpy(combined + prm->n, rnode, prm->n);
 
-        concatenated_nodes = malloc(2 * N_BYTES);
-        memcpy(concatenated_nodes, lnode, N_BYTES);
-        memcpy(concatenated_nodes + N_BYTES, rnode, N_BYTES);
-
-        H(PK_seed, ADRS, concatenated_nodes, node);
-
-        free(lnode);
-        free(rnode);
-        free(concatenated_nodes);
+        H(prm, pk_seed, &adrs, combined, node);
     }
-
-    return node;
+    memcpy(buffer, node, prm->n);
 }
 
 // Algorithm 16 (Generates a FORS signature)
-unsigned char** fors_sign(const unsigned char* md, const unsigned char* SK_seed,
-                         const unsigned char* PK_seed, ADRS* ADRS) {
-    unsigned char** SIG_FORS;
-    int* indices;
-    int total_elements = K * (A + 1);  // K and A from params
+void fors_sign(Parameters *prm, const unsigned char *md, const unsigned char *sk_seed, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned int sig_len = prm->n + prm->a * prm->n;
+    unsigned char sig_fors[sig_len * prm->k];
+    unsigned char indices[prm->k];
+    unsigned char auth[prm->a * prm->n];
+    base_2b(md, prm->a, prm->k, indices);
 
-    SIG_FORS = malloc(total_elements * sizeof(unsigned char*));
-    indices = base_2b(md, A, K);
+    for (int i = 0; i < prm->k; i++) {
+        fors_skGen(prm, sk_seed, pk_seed, adrs, i * (int) pow(2, prm->a) + indices[i], sig_fors + i * sig_len);
 
-    for (int i = 0; i < K; i++) {
-        SIG_FORS[i * (A + 1)] = fors_skGen(SK_seed, PK_seed, ADRS,
-                                          i * (1 << A) + indices[i]);
-
-        for (int j = 0; j < A; j++) {
-            int s = (floor(indices[i] / pow(2, j))) ^ 1;
-            SIG_FORS[i * (A + 1) + j + 1] = fors_node(SK_seed,
-                                                     i * (1 << (A - j)) + s,
-                                                     j, PK_seed, ADRS);
+        memset(auth, 0, prm->a * prm->n);
+        for (int j = 0; j < prm->a; j++) {
+            int s = (int) floor(indices[i] / pow(2, j)) ^ 1;
+            fors_node(prm, sk_seed, i * (int) pow(2, prm->a - j) + s, j, pk_seed, adrs, auth + j * prm->n);
         }
+        memcpy(sig_fors + i * sig_len + prm->n, auth, prm->a * prm->n);
     }
-
-    free(indices);
-    return SIG_FORS;
+    memcpy(buffer, sig_fors, sig_len * prm->k);
 }
 
 // Algorithm 17 (Computes a FORS public key from a FORS signature)
-unsigned char* fors_pkFromSig(unsigned char** SIG_FORS, const unsigned char* md,
-                            const unsigned char* PK_seed, ADRS* ADRS) {
-    int* indices = base_2b(md, A, K);
-    unsigned char** root = malloc(K * sizeof(unsigned char*));
-    unsigned char* node[2];
-    unsigned char* pk;
+void fors_pkFromSig(Parameters *prm, unsigned char *sig_fors, const unsigned char *md, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer)
+{
+    unsigned int sig_len = prm->n + prm->a * prm->n;
+    unsigned char indices[prm->k];
+    base_2b(md, prm->a, prm->k, indices);
 
-    node[0] = malloc(N_BYTES);
-    node[1] = malloc(N_BYTES);
+    unsigned char sk[prm->n];
+    unsigned char root[prm->k * prm->n];
+    unsigned char node_0[prm->n];
+    unsigned char node_1[prm->n];
+    unsigned char auth[prm->a * prm->n];
+    unsigned char combined[2 * prm->n];
 
-    for (int i = 0; i < K; i++) {
-        unsigned char* sk = SIG_FORS[i * (A + 1)];
-        setTreeHeight(ADRS, 0);
-        setTreeIndex(ADRS, i * (1 << A) + indices[i]);
-        F(PK_seed, ADRS, sk, node[0]);
+    for (int i = 0; i < prm->k; i++) {
+        memcpy(sk, sig_fors + i * sig_len, prm->n);
+        setTreeHeight(&adrs, 0);
+        setTreeIndex(&adrs, i * (int) pow(2, prm->a) + indices[i]);
+        F(prm, pk_seed, &adrs, sk, node_0);
+        memcpy(auth, sig_fors + i * sig_len + prm->n, prm->a * prm->n);
 
-        for (int j = 0; j < A; j++) {
-            unsigned char* auth = SIG_FORS[i * (A + 1) + j + 1];
-            unsigned char* concatenated_input = malloc(2 * N_BYTES);
+        for (int j = 0; j < prm->a; j++) {
 
-            setTreeHeight(ADRS, j + 1);
-
-            if ((indices[i] / (1 << j)) % 2 == 0) {
-                setTreeIndex(ADRS, getTreeIndex(ADRS) / 2);
-                memcpy(concatenated_input, node[0], N_BYTES);
-                memcpy(concatenated_input + N_BYTES, auth, N_BYTES);
+            setTreeHeight(&adrs, j + 1);
+            if ((indices[i] / (int) pow(2, j)) % 2 == 0) {
+                setTreeIndex(&adrs, getTreeIndex(&adrs) / 2);
+                memcpy(combined, node_0, prm->n);
+                memcpy(combined + prm->n, auth + j * prm->n, prm->n);
+                H(prm, pk_seed, &adrs, combined, node_1);
             } else {
-                setTreeIndex(ADRS, (getTreeIndex(ADRS) - 1) / 2);
-                memcpy(concatenated_input, auth, N_BYTES);
-                memcpy(concatenated_input + N_BYTES, node[0], N_BYTES);
+                setTreeIndex(&adrs, (getTreeIndex(&adrs) - 1) / 2);
+                memcpy(combined, auth + j * prm->n, prm->n);
+                memcpy(combined + prm->n, node_0, prm->n);
+                H(prm, pk_seed, &adrs, combined, node_1);
             }
-
-            H(PK_seed, ADRS, concatenated_input, node[1]);
-            memcpy(node[0], node[1], N_BYTES);
-
-            free(concatenated_input);
+            memcpy(node_0, node_1, prm->n);
         }
-
-        root[i] = malloc(N_BYTES);
-        memcpy(root[i], node[0], N_BYTES);
+        memcpy(root + i * prm->n, node_0, prm->n);
     }
-
-    ADRS forspkADRS;
-    memcpy(&forspkADRS, ADRS, sizeof(ADRS));
-    setTypeAndClear(&forspkADRS, FORS_ROOTS);
-    setKeyPairAddress(&forspkADRS, getKeyPairAddress(ADRS));
-
-    pk = Tlen(PK_seed, &forspkADRS, root);
-
-    // Cleanup
-    free(node[0]);
-    free(node[1]);
-    for (int i = 0; i < K; i++) {
-        free(root[i]);
-    }
-    free(root);
-    free(indices);
-
-    return pk;
+    ADRS forspkadrs;
+    forspkadrs = adrs;
+    setTypeAndClear(&forspkadrs, prm->FORS_ROOTS);
+    setKeyPairAddress(&forspkadrs, getKeyPairAddress(&adrs));
+    Tlen(prm, pk_seed, &forspkadrs, root, prm->k * prm->n, buffer);
 }
