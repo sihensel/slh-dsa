@@ -74,7 +74,7 @@ void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_
         SHAKE_256(M, M_len, PHM, 64);
     } else {
         printf("Unsupported hash function\n");
-        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', SHAKE256'\n");
+        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', 'SHAKE256'\n");
         return;
     }
 
@@ -134,7 +134,7 @@ bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *S
         SHAKE_256(M, M_len, PHM, 64);
     } else {
         printf("Unsupported hash function\n");
-        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', SHAKE256'\n");
+        printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', 'SHAKE256'\n");
         return 1;
     }
 
