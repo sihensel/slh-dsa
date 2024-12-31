@@ -25,24 +25,24 @@ def shake256(*data, out_len: int) -> bytes:
 
 
 def H_msg(R: bytes, pk_seed: bytes, pk_root: bytes, M: bytes|list) -> bytes:
-    return shake256(R, pk_seed, pk_root, M, out_len=8 * params.prm.m)
+    return shake256(R, pk_seed, pk_root, M, out_len=params.prm.m)
 
 
 def PRF(pk_seed: bytes, sk_seed: bytes, adrs: ADRS) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), sk_seed, out_len=8 * params.prm.n)
+    return shake256(pk_seed, adrs.getADRS(), sk_seed, out_len=params.prm.n)
 
 
 def PRF_msg(sk_prf: bytes, opt_rand: bytes, M: list|bytes) -> bytes:
-    return shake256(sk_prf, opt_rand, M, out_len=8 * params.prm.n)
+    return shake256(sk_prf, opt_rand, M, out_len=params.prm.n)
 
 
 def F(pk_seed: bytes, adrs: ADRS, M1: list|bytes) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), M1, out_len=8 * params.prm.n)
+    return shake256(pk_seed, adrs.getADRS(), M1, out_len=params.prm.n)
 
 
 def H(pk_seed: bytes, adrs: ADRS, M2: list|bytes) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), M2, out_len=8 * params.prm.n)
+    return shake256(pk_seed, adrs.getADRS(), M2, out_len=params.prm.n)
 
 
 def Tlen(pk_seed: bytes, adrs: ADRS, Ml: list|bytes) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), Ml, out_len=8 * params.prm.n)
+    return shake256(pk_seed, adrs.getADRS(), Ml, out_len=params.prm.n)

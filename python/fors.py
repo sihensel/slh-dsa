@@ -36,9 +36,7 @@ def fors_node(SK_seed: bytes, i: int, z: int, PK_seed: bytes, ADRS) -> bytes:   
         ADRS.setTreeIndex(i)
         node = F(PK_seed, ADRS, sk)
     else:
-        ADRS.setTreeHeight(z - 1)
         lnode = fors_node(SK_seed, 2 * i, z - 1, PK_seed, ADRS)
-        ADRS.setTreeHeight(z - 1)
         rnode = fors_node(SK_seed, 2 * i + 1, z - 1, PK_seed, ADRS)
         ADRS.setTreeHeight(z)
         ADRS.setTreeIndex(i)
