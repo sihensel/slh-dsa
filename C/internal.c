@@ -112,7 +112,7 @@ bool slh_verify_internal(Parameters *prm, unsigned char *M, size_t M_len, unsign
 
     if (SIG_len != sig_len) {
         printf("Signature has invalid length\n");
-        return false;
+        return 1;
     }
 
     ADRS adrs;

@@ -94,7 +94,7 @@ bool slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *SIG, s
 {
     if (ctx_len > MAX_CTX_LENGTH) {
         printf("Context is longer that %d\n", MAX_CTX_LENGTH);
-        return 0;
+        return 1;
     }
 
     uint8_t M_prime[1 + 1 + ctx_len + M_len];
@@ -104,8 +104,7 @@ bool slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *SIG, s
     memcpy(M_prime + 2, ctx, ctx_len);
     memcpy(M_prime + 2 + ctx_len, M, M_len);
 
-    bool result = slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
-    return result;
+    return slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
 }
 
 // Algorithmus 25: Verifiziert eine vorgehashte SLH-DSA Signatur
@@ -146,6 +145,5 @@ bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *S
     memcpy(M_prime + 2 + ctx_len, OID, sizeof OID);
     memcpy(M_prime + 2 + ctx_len + sizeof OID, PHM, sizeof PHM);
 
-    bool result = slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
-    return result;
+    return slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
 }
