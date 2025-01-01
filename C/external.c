@@ -7,15 +7,14 @@
 #include "params.h"
 #include "internal.h"
 #include "shake.h"
-
-#define MAX_CTX_LENGTH 255
+#include "external.h"
 
 // Algorithmus 21: Generiert ein SLH-DSA Schlüsselpaar
-void slh_keygen(Parameters *prm, unsigned char *SK, unsigned char *PK)
+void slh_keygen(Parameters *prm, uint8_t *SK, uint8_t *PK)
 {
-    unsigned char SK_seed[prm->n];
-    unsigned char SK_prf[prm->n];
-    unsigned char PK_seed[prm->n];
+    uint8_t SK_seed[prm->n];
+    uint8_t SK_prf[prm->n];
+    uint8_t PK_seed[prm->n];
 
     arc4random_buf(SK_seed, sizeof SK_seed);
     arc4random_buf(SK_prf , sizeof SK_prf);
@@ -25,17 +24,17 @@ void slh_keygen(Parameters *prm, unsigned char *SK, unsigned char *PK)
 }
 
 // Algorithmus 22: Generiert eine reine SLH-DSA Signatur
-void slh_sign(Parameters *prm, const unsigned char *M, size_t M_len, const unsigned char *ctx, size_t ctx_len, const unsigned char *SK, unsigned char *SIG)
+void slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const uint8_t *SK, uint8_t *SIG)
 {
     if (ctx_len > MAX_CTX_LENGTH) {
         printf("Context is longer that %d\n", MAX_CTX_LENGTH);
         return;
     }
 
-    unsigned char addrnd[prm->n];
+    uint8_t addrnd[prm->n];
     arc4random_buf(addrnd, sizeof addrnd);
 
-    unsigned char M_prime[1 + 1 + ctx_len + M_len];
+    uint8_t M_prime[1 + 1 + ctx_len + M_len];
     M_prime[0] = 0;
     toByte(ctx_len, 1, M_prime + 1);
 
@@ -53,12 +52,11 @@ void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_
         return;
     }
 
-    unsigned char addrnd[prm->n];
+    uint8_t addrnd[prm->n];
     arc4random_buf(addrnd, sizeof addrnd);
 
     uint8_t OID[11];
-    uint8_t PHM[64];
-    memset(PHM, 0, sizeof PHM);
+    uint8_t PHM[64] = {0};
 
     if (strcmp(PH, "SHA-256") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01", 11);
@@ -116,8 +114,7 @@ bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *S
     }
 
     uint8_t OID[11];
-    uint8_t PHM[64];
-    memset(PHM, 0, sizeof PHM);
+    uint8_t PHM[64] = {0};
 
     if (strcmp(PH, "SHA-256") == 0) {
         memcpy(OID, "\x06\x09\x60\x86\x48\x01\x65\x03\x04\x02\x01", 11);

@@ -1,14 +1,12 @@
-#ifndef INTERNAL_H
-#define INTERNAL_H
+#pragma once
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "params.h"
 
-void slh_keygen_internal(Parameters *prm, unsigned char *sk_seed, unsigned char *sk_prf, unsigned char *pk_seed, unsigned char *SK, unsigned char *PK);
+void slh_keygen_internal(Parameters *prm, uint8_t *sk_seed, uint8_t *sk_prf, uint8_t *pk_seed, uint8_t *SK, uint8_t *PK);
 
-void slh_sign_internal(Parameters *prm, unsigned char *M, size_t M_len, const unsigned char *SK, const unsigned char *addrnd, unsigned char *buffer);
+void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *SK, const uint8_t *addrnd, uint8_t *buffer);
 
-bool slh_verify_internal(Parameters *prm, unsigned char *M, size_t M_len, unsigned char *SIG, size_t SIG_len, const unsigned char *PK);
-
-#endif
+bool slh_verify_internal(Parameters *prm, uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, const uint8_t *PK);

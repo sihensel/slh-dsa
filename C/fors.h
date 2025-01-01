@@ -1,15 +1,12 @@
-#ifndef FORS_H
-#define FORS_H
+#pragma once
 
 #include "params.h"
 #include "adrs.h"
 
-void fors_skGen(Parameters *prm, const unsigned char *sk_seed, const unsigned char *pk_seed, ADRS adrs, int idx, unsigned char *buffer);
+void fors_skGen(Parameters *prm, const uint8_t *sk_seed, const uint8_t *pk_seed, ADRS adrs, uint32_t idx, uint8_t *buffer);
 
-void fors_node(Parameters *prm, const unsigned char *sk_seed, int i, int z, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer);
+void fors_node(Parameters *prm, const uint8_t *sk_seed, uint32_t i, uint32_t z, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer);
 
-void fors_sign(Parameters *prm, const unsigned char *md, const unsigned char *sk_seed, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer);
+void fors_sign(Parameters *prm, const uint8_t *md, const uint8_t *sk_seed, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer);
 
-void fors_pkFromSig(Parameters *prm, unsigned char *sig_fors, const unsigned char *md, const unsigned char *pk_seed, ADRS adrs, unsigned char *buffer);
-
-#endif
+void fors_pkFromSig(Parameters *prm, uint8_t *sig_fors, const uint8_t *md, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer);

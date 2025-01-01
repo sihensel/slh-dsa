@@ -1,30 +1,28 @@
-#ifndef PARAMS_H
-#define PARAMS_H
+#pragma once
+
+#include <stdint.h>
 
 // Structure to hold parameters
 typedef struct {
-    int WOTS_HASH;
-    int WOTS_PK;
-    int TREE;
-    int FORS_TREE;
-    int FORS_ROOTS;
-    int WOTS_PRF;
-    int FORS_PRF;
-    int lg_w;
-    int w;
-    int len2;
-    int n;
-    int h;
-    int d;
-    int h_;
-    int a;
-    int k;
-    int m;
-    int len1;
-    int len;
+    uint8_t WOTS_HASH;
+    uint8_t WOTS_PK;
+    uint8_t TREE;
+    uint8_t FORS_TREE;
+    uint8_t FORS_ROOTS;
+    uint8_t WOTS_PRF;
+    uint8_t FORS_PRF;
+    uint8_t lg_w;
+    uint8_t w;
+    uint8_t len2;
+    uint8_t n;
+    uint8_t h;
+    uint8_t d;
+    uint8_t h_;
+    uint8_t a;
+    uint8_t k;
+    uint8_t m;
+    uint8_t len1;
+    uint8_t len;
 } Parameters;
 
-/*void setup_parameter_set(const char* name);*/
 void setup_parameter_set(Parameters *prm, const char* name);
-
-#endif
