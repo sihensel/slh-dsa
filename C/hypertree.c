@@ -9,7 +9,7 @@
 
 // algorithm 12
 // Generates a hypertree signature
-void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const uint8_t *pk_seed, uint32_t idx_tree, uint32_t idx_leaf, uint8_t *buffer)
+void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const uint8_t *pk_seed, uint64_t idx_tree, uint64_t idx_leaf, uint8_t *buffer)
 {
     // length of one XMSS signature
     uint32_t xmss_sig_len = (prm->len + prm->h_) * prm->n;
@@ -27,7 +27,7 @@ void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const ui
     xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, root);
 
     for (uint32_t j = 1; j < prm->d; j++) {
-        idx_leaf = idx_tree % (int32_t) pow(2, prm->h_);
+        idx_leaf = idx_tree % (uint64_t) pow(2, prm->h_);
         idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
@@ -44,7 +44,7 @@ void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const ui
 
 // algorithm 13
 // Verifies a hypertree signature
-bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const uint8_t *pk_seed, uint32_t idx_tree, uint32_t idx_leaf, const uint8_t *pk_root)
+bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const uint8_t *pk_seed, uint64_t idx_tree, uint64_t idx_leaf, const uint8_t *pk_root)
 {
     // length of one XMSS signature
     uint32_t xmss_sig_len = (prm->len + prm->h_) * prm->n;
@@ -60,7 +60,7 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
     xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, node);
 
     for (uint32_t j = 1; j < prm->d; j++) {
-        idx_leaf = idx_tree % (int32_t) pow(2, prm->h_);
+        idx_leaf = idx_tree % (uint64_t) pow(2, prm->h_);
         idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
@@ -68,17 +68,6 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
         memcpy(sig_tmp, sig_ht + j * xmss_sig_len, xmss_sig_len);
         xmss_pkFromSig(prm, idx_leaf, sig_tmp, node, pk_seed, adrs, node);
     }
-
-    /*
-    for (uint32_t i = 0; i < prm->n; i++) {
-        printf("%02x", node[i]);
-    }
-    printf("\n");
-    for (uint32_t i = 0; i < prm->n; i++) {
-        printf("%02x", pk_root[i]);
-    }
-    printf("\n");
-    */
 
     if (memcmp(node, pk_root, prm->n) == 0)
         return true;

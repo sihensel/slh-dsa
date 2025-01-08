@@ -4,45 +4,56 @@ import params
 from adrs import ADRS
 
 
-# wrapper around hashlib.shake_256
-def shake256(*data, out_len: int) -> bytes:
+def H_msg(R: bytes, pk_seed: bytes, pk_root: bytes, M: bytes) -> bytes:
     h = hashlib.shake_256()
-    for item in data:
-        if type(item) is int:
-            h.update(item.to_bytes(16))
-        elif type(item) is bytes:
-            h.update(item)
-        # if we get a list, add each element individually to update()
-        elif type(item) is list:
-            for elem in item:
-                if type(elem) is int:
-                    h.update(elem.to_bytes(16))
-                elif type(elem) is bytes:
-                    h.update(elem)
-        else:
-            print("shake256: unknown data type")
-    return h.digest(out_len)
-
-
-def H_msg(R: bytes, pk_seed: bytes, pk_root: bytes, M: bytes|list) -> bytes:
-    return shake256(R, pk_seed, pk_root, M, out_len=params.prm.m)
+    h.update(R)
+    h.update(pk_seed)
+    h.update(pk_root)
+    h.update(M)
+    return h.digest(params.prm.m)
 
 
 def PRF(pk_seed: bytes, sk_seed: bytes, adrs: ADRS) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), sk_seed, out_len=params.prm.n)
+    h = hashlib.shake_256()
+    h.update(pk_seed)
+    h.update(sk_seed)
+    h.update(bytearray(adrs.getADRS()))
+    return h.digest(params.prm.n)
 
 
-def PRF_msg(sk_prf: bytes, opt_rand: bytes, M: list|bytes) -> bytes:
-    return shake256(sk_prf, opt_rand, M, out_len=params.prm.n)
+def PRF_msg(sk_prf: bytes, opt_rand: bytes, M: bytes) -> bytes:
+    h = hashlib.shake_256()
+    h.update(sk_prf)
+    h.update(opt_rand)
+    h.update(M)
+    return h.digest(params.prm.n)
 
 
-def F(pk_seed: bytes, adrs: ADRS, M1: list|bytes) -> bytes:
+def F(pk_seed: bytes, adrs: ADRS, M1: bytes|list) -> bytes:
+    h = hashlib.shake_256()
+    h.update(pk_seed)
+    h.update(bytearray(adrs.getADRS()))
+    if type(M1) is list:
+        for i in M1:
+            h.update(i)
+    else:
+        h.update(M1)
+    return h.digest(params.prm.n)
     return shake256(pk_seed, adrs.getADRS(), M1, out_len=params.prm.n)
 
 
-def H(pk_seed: bytes, adrs: ADRS, M2: list|bytes) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), M2, out_len=params.prm.n)
+def H(pk_seed: bytes, adrs: ADRS, M2: bytes) -> bytes:
+    h = hashlib.shake_256()
+    h.update(pk_seed)
+    h.update(bytearray(adrs.getADRS()))
+    h.update(M2)
+    return h.digest(params.prm.n)
 
 
-def Tlen(pk_seed: bytes, adrs: ADRS, Ml: list|bytes) -> bytes:
-    return shake256(pk_seed, adrs.getADRS(), Ml, out_len=params.prm.n)
+def Tlen(pk_seed: bytes, adrs: ADRS, Ml: list[bytes]) -> bytes:
+    h = hashlib.shake_256()
+    h.update(pk_seed)
+    h.update(bytearray(adrs.getADRS()))
+    for i in Ml:
+        h.update(i)
+    return h.digest(params.prm.n)

@@ -16,9 +16,20 @@ void slh_keygen(Parameters *prm, uint8_t *SK, uint8_t *PK)
     uint8_t SK_prf[prm->n];
     uint8_t PK_seed[prm->n];
 
-    randombytes_buf(SK_seed, sizeof SK_seed);
-    randombytes_buf(SK_prf , sizeof SK_prf);
-    randombytes_buf(PK_seed, sizeof PK_seed);
+    if (sodium_init() < 0) {
+        printf("Error initalizing sodium library\n");
+        return;
+    }
+
+    /*randombytes_buf(SK_seed, sizeof SK_seed);*/
+    /*randombytes_buf(SK_prf , sizeof SK_prf);*/
+    /*randombytes_buf(PK_seed, sizeof PK_seed);*/
+    /*memcpy(SK_seed, "\xFC\x29\xE8\xD2\x15\x09\xD1\x55\x80\x1D\x88\x85\xCA\xBB\xC9\xE9", prm->n);*/
+    /*memcpy(SK_prf,  "\x0C\xD2\x1C\xBF\xC4\x96\x06\xE5\xC5\x16\x45\xB7\xFA\x1C\x95\x4E", prm->n);*/
+    /*memcpy(PK_seed, "\xD7\xAA\x10\x48\xA9\xF6\x61\xEA\x58\xFD\x29\x14\x26\x8B\xB0\x15", prm->n);*/
+    memcpy(SK_seed, "\x7C\x99\x35\xA0\xB0\x76\x94\xAA\x0C\x6D\x10\xE4\xDB\x6B\x1A\xDD", prm->n);
+    memcpy(SK_prf,  "\x2F\xD8\x1A\x25\xCC\xB1\x48\x03\x2D\xCD\x73\x99\x36\x73\x7F\x2D", prm->n);
+    memcpy(PK_seed, "\xB5\x05\xD7\xCF\xAD\x1B\x49\x74\x99\x32\x3C\x86\x86\x32\x5E\x47", prm->n);
 
     slh_keygen_internal(prm, SK_seed, SK_prf, PK_seed, SK, PK);
 }
@@ -32,7 +43,14 @@ void slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ct
     }
 
     uint8_t addrnd[prm->n];
-    randombytes_buf(addrnd, sizeof addrnd);
+    if (sodium_init() < 0) {
+        printf("Error initalizing sodium library\n");
+        return;
+    }
+    // randombytes_buf(addrnd, sizeof addrnd);
+
+    // for deterministic varaiant, use PK_seed for addrnd
+    memcpy(addrnd, SK + 2 * prm->n, prm->n);
 
     uint8_t M_prime[1 + 1 + ctx_len + M_len];
     M_prime[0] = 0;
@@ -53,7 +71,12 @@ void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_
     }
 
     uint8_t addrnd[prm->n];
-    randombytes_buf(addrnd, sizeof addrnd);
+    if (sodium_init() < 0) {
+        printf("Error initalizing sodium library\n");
+        return;
+    }
+    // randombytes_buf(addrnd, sizeof addrnd);
+    memcpy(addrnd, SK + 2 * prm->n, prm->n);
 
     uint8_t OID[11];
     uint8_t PHM[64] = {0};

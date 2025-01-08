@@ -33,9 +33,9 @@ void slh_keygen_internal(Parameters *prm, uint8_t *sk_seed, uint8_t *sk_prf, uin
 void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *SK, const uint8_t *addrnd, uint8_t *buffer)
 {
     // NOTE precompute these values to make the code cleaner
-    uint32_t param1 = (int32_t) ceil(prm->k * prm->a / 8.0);
-    uint32_t param2 = (int32_t) ceil((prm->h - (float)prm->h / prm->d) / 8.0);
-    uint32_t param3 = (int32_t) ceil(prm->h / (prm->d * 8.0));
+    uint64_t param1 = (uint64_t) ceil(prm->k * prm->a / 8.0);
+    uint64_t param2 = (uint64_t) ceil((prm->h - (float)prm->h / prm->d) / 8.0);
+    uint64_t param3 = (uint64_t) ceil(prm->h / (prm->d * 8.0));
 
     ADRS adrs;
     initADRS(&adrs);
@@ -62,6 +62,7 @@ void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t 
     // Generate message digest
     uint8_t digest[prm->m];
     H_msg(prm, R, pk_seed, pk_root, M, M_len, digest);
+
     uint8_t md[param1];
     memcpy(md, digest, param1);
 
@@ -70,8 +71,8 @@ void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t 
     memcpy(tmp_idx_tree, digest + param1, param2);
     memcpy(tmp_idx_leaf, digest + param1 + param2, param3);
 
-    uint64_t idx_tree = toInt(tmp_idx_tree, param2) % (int32_t) pow(2, prm->h - (float)prm->h / prm->d);
-    uint64_t idx_leaf = toInt(tmp_idx_leaf, param3) % (int32_t) pow(2, (float)prm->h / prm->d);
+    uint64_t idx_tree = toInt(tmp_idx_tree, param2) % (uint64_t) pow(2, prm->h - ((float)prm->h / prm->d));
+    uint64_t idx_leaf = toInt(tmp_idx_leaf, param3) % (uint64_t) pow(2, (float)prm->h / prm->d);
 
     setTreeAddress(&adrs, idx_tree);
     setTypeAndClear(&adrs, prm->FORS_TREE);
@@ -97,9 +98,9 @@ void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t 
 // algorithm 20
 bool slh_verify_internal(Parameters *prm, uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, const uint8_t *PK)
 {
-    uint32_t param1 = (int32_t) ceil(prm->k * prm->a / 8.0);
-    uint32_t param2 = (int32_t) ceil((prm->h - (float)prm->h / prm->d) / 8.0);
-    uint32_t param3 = (int32_t) ceil(prm->h / (prm->d * 8.0));
+    uint64_t param1 = (uint64_t) ceil(prm->k * prm->a / 8.0);
+    uint64_t param2 = (uint64_t) ceil((prm->h - (float)prm->h / prm->d) / 8.0);
+    uint64_t param3 = (uint64_t) ceil(prm->h / (prm->d * 8.0));
 
     uint32_t sig_fors_len = prm->k * (1 + prm->a) * prm->n;
     uint32_t sig_ht_len = (prm->h + prm->d * prm->len) * prm->n;
@@ -138,8 +139,8 @@ bool slh_verify_internal(Parameters *prm, uint8_t *M, size_t M_len, uint8_t *SIG
     memcpy(tmp_idx_tree, digest + param1, param2);
     memcpy(tmp_idx_leaf, digest + param1 + param2, param3);
 
-    uint64_t idx_tree = toInt(tmp_idx_tree, param2) % (int32_t) pow(2, prm->h - (float)prm->h / prm->d);
-    uint64_t idx_leaf = toInt(tmp_idx_leaf, param3) % (int32_t) pow(2, (float)prm->h / prm->d);
+    uint64_t idx_tree = toInt(tmp_idx_tree, param2) % (uint64_t) pow(2, prm->h - (float)prm->h / prm->d);
+    uint64_t idx_leaf = toInt(tmp_idx_leaf, param3) % (uint64_t) pow(2, (float)prm->h / prm->d);
 
     setTreeAddress(&adrs, idx_tree);
     setTypeAndClear(&adrs, prm->FORS_TREE);

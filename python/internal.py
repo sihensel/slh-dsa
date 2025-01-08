@@ -1,4 +1,3 @@
-from copy import deepcopy
 from math import ceil
 
 import params
@@ -18,23 +17,23 @@ def slh_keygen_internal(sk_seed: bytes, sk_prf: bytes, pk_seed: bytes) -> tuple:
 
 
 # algorithm 19
-def slh_sign_internal(M: list, SK: tuple, addrnd: bytes) -> list:
+def slh_sign_internal(M: bytes, SK: tuple, addrnd: bytes) -> list:
     # NOTE precompute these values to make the code cleaner
     param1 = ceil(params.prm.k * params.prm.a / 8)
     param2 = ceil((params.prm.h - params.prm.h / params.prm.d) / 8)
+    param3 = ceil(params.prm.h / (params.prm.d * 8))
     SIG = []
     adrs = ADRS()
-    opt_rand = deepcopy(addrnd)
 
-    R = PRF_msg(SK[1], opt_rand, M)
+    R = PRF_msg(SK[1], addrnd, M)
     SIG.append(R)
     digest = H_msg(R, SK[2], SK[3], M)
     md = digest[0:param1]
     tmp_idx_tree = digest[param1:param1 + param2]
-    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + ceil(params.prm.h / (params.prm.d * 8))]
+    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + param3]
 
-    idx_tree = int(toInt(tmp_idx_tree, param2) % 2 ** (params.prm.h - params.prm.h / params.prm.d))
-    idx_leaf = int(toInt(tmp_idx_leaf, ceil(params.prm.h / (params.prm.d * 8))) % 2 ** (params.prm.h / params.prm.d))
+    idx_tree = toInt(tmp_idx_tree, param2) % 2 ** int(params.prm.h - params.prm.h / params.prm.d)
+    idx_leaf = toInt(tmp_idx_leaf, param3) % 2 ** int(params.prm.h / params.prm.d)
 
     adrs.setTreeAddress(idx_tree)
     adrs.setTypeAndClear(params.prm.FORS_TREE)
@@ -46,18 +45,14 @@ def slh_sign_internal(M: list, SK: tuple, addrnd: bytes) -> list:
     PK_FORS = fors_pkFromSig(SIG_FORS, md, SK[2], adrs)
     SIG_HT = ht_sign(PK_FORS, SK[0], SK[2], idx_tree, idx_leaf)
     SIG += SIG_HT
-    # SLH-DSA signature consists of the following:
-    # Randomness        1
-    # FORS signature    k * (a + 1) = 182
-    # HT signature      h + d * len = 308
-    # = 491 elements in the list (for our parameter set)
     return SIG
 
 
 # algorithm 20
-def slh_verify_internal(M: list, SIG: list, PK: tuple) -> bool:
+def slh_verify_internal(M: bytearray, SIG: list, PK: tuple) -> bool:
     param1 = ceil(params.prm.k * params.prm.a / 8)
     param2 = ceil((params.prm.h - params.prm.h / params.prm.d) / 8)
+    param3 = ceil(params.prm.h / (params.prm.d * 8))
 
     if len(SIG) != 1 + params.prm.k * (1 + params.prm.a) + params.prm.h + params.prm.d * params.prm.len:
         return False
@@ -70,9 +65,9 @@ def slh_verify_internal(M: list, SIG: list, PK: tuple) -> bool:
     digest = H_msg(R, PK[0], PK[1], M)
     md = digest[0: param1]
     tmp_idx_tree = digest[param1:param1 + param2]
-    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + ceil(params.prm.h / (8 * params.prm.d))]
-    idx_tree = int(toInt(tmp_idx_tree, param2) % 2 ** (params.prm.h - params.prm.h / params.prm.d))
-    idx_leaf = int(toInt(tmp_idx_leaf, ceil(params.prm.h / (params.prm.d * 8))) % 2 ** (params.prm.h / params.prm.d))
+    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + param3]
+    idx_tree = toInt(tmp_idx_tree, param2) % 2 ** int(params.prm.h - params.prm.h / params.prm.d)
+    idx_leaf = toInt(tmp_idx_leaf, param3) % 2 ** int(params.prm.h / params.prm.d)
 
     adrs.setTreeAddress(idx_tree)
     adrs.setTypeAndClear(params.prm.FORS_TREE)

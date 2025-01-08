@@ -7,6 +7,7 @@ void H_msg(Parameters *prm, const uint8_t *R, const uint8_t *pk_seed, const uint
     gcry_md_hd_t h;
     gcry_md_open(&h, GCRY_MD_SHAKE256, GCRY_MD_FLAG_SECURE);
 
+    gcry_md_write(h, R, prm->n);
     gcry_md_write(h, pk_seed, prm->n);
     gcry_md_write(h, pk_root, prm->n);
     gcry_md_write(h, M, M_len);

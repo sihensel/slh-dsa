@@ -4,9 +4,10 @@
 #include "adrs.h"
 #include "shake.h"
 #include "wots.h"
+#include <stdio.h>
 
 // algorithm 14
-void fors_skGen(Parameters *prm, const uint8_t *sk_seed, const uint8_t *pk_seed, ADRS adrs, uint32_t idx, uint8_t *buffer)
+void fors_skGen(Parameters *prm, const uint8_t *sk_seed, const uint8_t *pk_seed, ADRS adrs, uint64_t idx, uint8_t *buffer)
 {
     ADRS sk_adrs;
     sk_adrs = adrs;
@@ -17,7 +18,7 @@ void fors_skGen(Parameters *prm, const uint8_t *sk_seed, const uint8_t *pk_seed,
 }
 
 // Algorithm 15 (Computes the root of a Merkle subtree of FORS public values)
-void fors_node(Parameters *prm, const uint8_t *sk_seed, uint32_t i, uint32_t z, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer)
+void fors_node(Parameters *prm, const uint8_t *sk_seed, uint64_t i, uint64_t z, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer)
 {
     uint8_t node[prm->n];
 
@@ -56,12 +57,11 @@ void fors_sign(Parameters *prm, const uint8_t *md, const uint8_t *sk_seed, const
     base_2b(md, prm->a, prm->k, indices);
 
     for (uint32_t i = 0; i < prm->k; i++) {
-        fors_skGen(prm, sk_seed, pk_seed, adrs, i * (int32_t) pow(2, prm->a) + indices[i], sig_fors + i * sig_len);
+        fors_skGen(prm, sk_seed, pk_seed, adrs, i * (uint64_t) pow(2, prm->a) + indices[i], sig_fors + i * sig_len);
 
-        memset(auth, 0, prm->a * prm->n);
         for (uint32_t j = 0; j < prm->a; j++) {
-            uint32_t s = (int32_t) floor(indices[i] / pow(2, j)) ^ 1;
-            fors_node(prm, sk_seed, i * (int32_t) pow(2, prm->a - j) + s, j, pk_seed, adrs, auth + j * prm->n);
+            uint64_t s = (uint64_t) floor(indices[i] / pow(2, j)) ^ 1;
+            fors_node(prm, sk_seed, i * (uint64_t) pow(2, prm->a - j) + s, j, pk_seed, adrs, auth + j * prm->n);
         }
         memcpy(sig_fors + i * sig_len + prm->n, auth, prm->a * prm->n);
     }
@@ -85,14 +85,14 @@ void fors_pkFromSig(Parameters *prm, uint8_t *sig_fors, const uint8_t *md, const
     for (uint32_t i = 0; i < prm->k; i++) {
         memcpy(sk, sig_fors + i * sig_len, prm->n);
         setTreeHeight(&adrs, 0);
-        setTreeIndex(&adrs, i * (int32_t) pow(2, prm->a) + indices[i]);
+        setTreeIndex(&adrs, i * (uint64_t) pow(2, prm->a) + indices[i]);
         F(prm, pk_seed, &adrs, sk, node_0);
         memcpy(auth, sig_fors + i * sig_len + prm->n, prm->a * prm->n);
 
         for (uint32_t j = 0; j < prm->a; j++) {
 
             setTreeHeight(&adrs, j + 1);
-            if ((indices[i] / (int32_t) pow(2, j)) % 2 == 0) {
+            if ((indices[i] / (uint64_t) pow(2, j)) % 2 == 0) {
                 setTreeIndex(&adrs, getTreeIndex(&adrs) / 2);
                 memcpy(combined, node_0, prm->n);
                 memcpy(combined + prm->n, auth + j * prm->n, prm->n);

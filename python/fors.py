@@ -24,7 +24,7 @@ def fors_skGen(sk_seed: bytes, pk_seed: bytes, adrs: ADRS, idx: int) -> bytes:
     sk_adrs.setTypeAndClear(params.prm.FORS_PRF)
     sk_adrs.setKeyPairAddress(adrs.getKeyPairAddress())
     sk_adrs.setTreeIndex(idx)
-    return PRF(pk_seed, sk_seed, adrs)
+    return PRF(pk_seed, sk_seed, sk_adrs)
 
 
 #Algorithmus 15 (Computes the root of a Merkle subtree of FORS public values)
@@ -53,7 +53,7 @@ def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> list:   
     indices = base_2b(md, params.prm.a, params.prm.k)                 # Compute indices using base_2b function
 
     for i in range(params.prm.k):
-        SIG_FORS.append(fors_skGen(SK_seed, PK_seed, ADRS, i * 2 ** params.prm.a + indices[i]))   # Compute signature elements
+        SIG_FORS.append(fors_skGen(SK_seed, PK_seed, ADRS, i * 2 ** params.prm.a + indices[i]))
 
         AUTH = []
         for j in range(params.prm.a):

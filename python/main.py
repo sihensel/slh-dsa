@@ -56,30 +56,36 @@ def main(M: bytes,
 
 if __name__ == "__main__":
 
-    M = b"Hello World"
+    M = bytearray([1, 2, 3, 4])
+    # setup_parameter_set("SLH-DSA-SHAKE-128f")
+    # SK, PK = slh_keygen()
+    # ctx = [0]
+    # sig = slh_sign(M, ctx, SK)
+    # res = slh_verify(M, sig, ctx, PK)
+    # print(res)
 
     # read key data from file
-    with open("key.txt", "r") as fp:
-        data = [line.rstrip() for line in fp]
-        SK = bytes.fromhex(data[0])
-        SK = (SK[0:16], SK[16:32], SK[32:48], SK[48:])
-        PK = bytes.fromhex(data[1])
-        PK = (PK[0:16], PK[16:])
+    # with open("key.txt", "r") as fp:
+    #     data = [line.rstrip() for line in fp]
+    #     SK = bytes.fromhex(data[0])
+    #     SK = (SK[0:16], SK[16:32], SK[32:48], SK[48:])
+    #     PK = bytes.fromhex(data[1])
+    #     PK = (PK[0:16], PK[16:])
+    #
+    # # read signature from file
+    # with open("sig.txt", "r") as fp:
+    #     data = [line.rstrip() for line in fp]
+    #     sig = [bytes.fromhex(i) for i in data]
 
-    # read signature from file
-    with open("sig.txt", "r") as fp:
-        data = [line.rstrip() for line in fp]
-        sig = [bytes.fromhex(i) for i in data]
-
-    verify = True
+    verify = False
     start = time.time()
     result = main(M=M,
-                  gen_keypair=False,
+                  gen_keypair=True,
                   sign_msg_hash=False,
                   verify=verify,
-                  SK=SK,
-                  PK=PK,
-                  sig=sig,
+                  # SK=SK,
+                  # PK=PK,
+                  # sig=sig,
                   parameter_set="SLH-DSA-SHAKE-128f"
                   )
     end = time.time()

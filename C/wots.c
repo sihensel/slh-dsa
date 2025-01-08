@@ -23,10 +23,10 @@ uint8_t gen_len2(uint32_t n, uint32_t lg_w)
 }
 
 // Algorithm 4 (Computes the base 2^b representation of X)
-void base_2b(const uint8_t *X, uint32_t b, uint32_t out_len, uint8_t *baseb)
+void base_2b(const uint8_t *X, uint64_t b, uint32_t out_len, uint8_t *baseb)
 {
-    uint32_t in_index = 0;                           // Equivalent to `in` in pseudocode
-    uint32_t bits = 0;                               // Number of bits currently in `total`
+    uint64_t in_index = 0;                           // Equivalent to `in` in pseudocode
+    uint64_t bits = 0;                               // Number of bits currently in `total`
     uint64_t total = 0;               // Accumulates the bit representation
 
     for (uint32_t out = 0; out < out_len; out++) {
@@ -42,7 +42,7 @@ void base_2b(const uint8_t *X, uint32_t b, uint32_t out_len, uint8_t *baseb)
 }
 
 // Algorithm 5 (Chaining function used in WOTS+)
-void chain(Parameters *prm, const uint8_t *X, uint32_t i, uint32_t s, const uint8_t *PK_seed, ADRS *adrs, uint8_t *buffer)
+void chain(Parameters *prm, const uint8_t *X, uint64_t i, uint64_t s, const uint8_t *PK_seed, ADRS *adrs, uint8_t *buffer)
 {
     uint8_t tmp[prm->n];
     memcpy(tmp, X, prm->n);
@@ -80,7 +80,7 @@ void wots_pkGen(Parameters *prm, const uint8_t *SK_seed, const uint8_t *PK_seed,
 
 // Algorithm 7 (Generates a WOTS+ signature on an n-byte message)
 void wots_sign(Parameters *prm, const uint8_t *M, const uint8_t *SK_seed, const uint8_t *PK_seed, ADRS adrs, uint8_t *sig) {
-    uint32_t csum = 0;
+    uint64_t csum = 0;
     uint8_t msg[prm->len];
 
     base_2b(M, prm->lg_w, prm->len1, msg);       // Convert message to base w
@@ -112,7 +112,7 @@ void wots_sign(Parameters *prm, const uint8_t *M, const uint8_t *SK_seed, const 
 
 // Algorithm 8 (Computes a WOTS+ public key from a message and its signature)
 void wots_pkFromSig(Parameters *prm, uint8_t *sig, const uint8_t *M, const uint8_t *PK_seed, ADRS adrs, uint8_t *pksig) {
-    uint32_t csum = 0;
+    uint64_t csum = 0;
     uint8_t msg[prm->len];
 
     base_2b(M, prm->lg_w, prm->len1, msg);       // Convert message to base w
