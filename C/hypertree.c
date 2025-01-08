@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
 #include "params.h"
 #include "adrs.h"
 #include "xmss.h"
@@ -68,6 +69,18 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
         xmss_pkFromSig(prm, idx_leaf, sig_tmp, node, pk_seed, adrs, node);
     }
 
-    bool result = memcmp(node, pk_root, prm->n);
-    return result;
+    /*
+    for (uint32_t i = 0; i < prm->n; i++) {
+        printf("%02x", node[i]);
+    }
+    printf("\n");
+    for (uint32_t i = 0; i < prm->n; i++) {
+        printf("%02x", pk_root[i]);
+    }
+    printf("\n");
+    */
+
+    if (memcmp(node, pk_root, prm->n) == 0)
+        return true;
+    return false;
 }

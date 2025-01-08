@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
+#include <sodium.h>
 
 #include "adrs.h"
 #include "params.h"
@@ -16,9 +16,9 @@ void slh_keygen(Parameters *prm, uint8_t *SK, uint8_t *PK)
     uint8_t SK_prf[prm->n];
     uint8_t PK_seed[prm->n];
 
-    arc4random_buf(SK_seed, sizeof SK_seed);
-    arc4random_buf(SK_prf , sizeof SK_prf);
-    arc4random_buf(PK_seed, sizeof PK_seed);
+    randombytes_buf(SK_seed, sizeof SK_seed);
+    randombytes_buf(SK_prf , sizeof SK_prf);
+    randombytes_buf(PK_seed, sizeof PK_seed);
 
     slh_keygen_internal(prm, SK_seed, SK_prf, PK_seed, SK, PK);
 }
@@ -32,7 +32,7 @@ void slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ct
     }
 
     uint8_t addrnd[prm->n];
-    arc4random_buf(addrnd, sizeof addrnd);
+    randombytes_buf(addrnd, sizeof addrnd);
 
     uint8_t M_prime[1 + 1 + ctx_len + M_len];
     M_prime[0] = 0;
@@ -53,7 +53,7 @@ void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_
     }
 
     uint8_t addrnd[prm->n];
-    arc4random_buf(addrnd, sizeof addrnd);
+    randombytes_buf(addrnd, sizeof addrnd);
 
     uint8_t OID[11];
     uint8_t PHM[64] = {0};
@@ -92,7 +92,7 @@ bool slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *SIG, s
 {
     if (ctx_len > MAX_CTX_LENGTH) {
         printf("Context is longer that %d\n", MAX_CTX_LENGTH);
-        return 1;
+        return false;
     }
 
     uint8_t M_prime[1 + 1 + ctx_len + M_len];
@@ -110,7 +110,7 @@ bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *S
 {
     if (ctx_len > MAX_CTX_LENGTH) {
         printf("Context is longer that %d\n", MAX_CTX_LENGTH);
-        return 1;
+        return false;
     }
 
     uint8_t OID[11];
@@ -131,7 +131,7 @@ bool hash_slh_verify(Parameters *prm, const uint8_t *M, size_t M_len, uint8_t *S
     } else {
         printf("Unsupported hash function\n");
         printf("Valid values are 'SHA-256', 'SHA-512', 'SHAKE128', 'SHAKE256'\n");
-        return 1;
+        return false;
     }
 
     uint8_t M_prime[1 + 1 + ctx_len + 11 + sizeof PHM];
