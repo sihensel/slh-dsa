@@ -6,18 +6,15 @@ from adrs import toByte
 from internal import slh_keygen_internal, slh_sign_internal, slh_verify_internal
 
 # Algorithmus 21 (Generates an SLH-DSA key pair)
-def slh_keygen() -> tuple:
+def slh_keygen(SK_seed: bytes = b"", SK_prf: bytes = b"", PK_seed: bytes = b"") -> tuple:
 
     # Generate random seeds
-    # SK_seed = secrets.token_bytes(params.prm.n)
-    # SK_prf = secrets.token_bytes(params.prm.n)
-    # PK_seed = secrets.token_bytes(params.prm.n)
-    # SK_seed = bytes.fromhex("FC29E8D21509D155801D8885CABBC9E9")
-    # SK_prf = bytes.fromhex("0CD21CBFC49606E5C51645B7FA1C954E")
-    # PK_seed = bytes.fromhex("D7AA1048A9F661EA58FD2914268BB015")
-    SK_seed = bytes.fromhex("7C9935A0B07694AA0C6D10E4DB6B1ADD")
-    SK_prf = bytes.fromhex("2FD81A25CCB148032DCD739936737F2D")
-    PK_seed = bytes.fromhex("B505D7CFAD1B497499323C8686325E47")
+    if not SK_seed:
+        SK_seed = secrets.token_bytes(params.prm.n)
+    if not SK_prf:
+        SK_prf = secrets.token_bytes(params.prm.n)
+    if not PK_seed:
+        PK_seed = secrets.token_bytes(params.prm.n)
 
     # Check for errors
     if not SK_seed or not SK_prf or not PK_seed:
@@ -28,37 +25,31 @@ def slh_keygen() -> tuple:
 
 
 # Algorithmus 22 (Generates a pure SLH-DSA signature)
-def slh_sign(M: bytes, ctx: list, SK: tuple) -> list:           # Input: Message 𝑀, context string 𝑐𝑡𝑥, private key SK
+def slh_sign(M: bytes, SK: bytes, deterministic: bool = True) -> bytes:
 
-    if len(ctx) > 255:
-        return []
+    # for deterministic variant, use PK_seed for addrnd
+    if deterministic:
+        addrnd = SK[2 * params.prm.n:3 * params.prm.n]
+    else:
+        addrnd = secrets.token_bytes(params.prm.n)
+        if addrnd is None:
+            return b""
 
-    # addrnd = secrets.token_bytes(params.prm.n)  # Skip for deterministic variant
-    # if addrnd is None:
-    #     return []
-
-    # NOTE for deterministic variant, use PK_seed for addrnd
-    addrnd = SK[2]
-
-    # NOTE M is a bytes object, hence we need to put it in a list so the + operator works
-    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx
-    M_prime = bytearray(M_prime) + M
-
-    SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
-
-    return SIG          # Output: SLH-DSA signature SIG
+    return slh_sign_internal(M, SK, addrnd)
 
 
 # Algorithmus 23 (Generates a pre-hash SLH-DSA signature)
-def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Message 𝑀, context string 𝑐𝑡𝑥, pre-hash function PH, private key SK
+def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: bytes, deterministic: bool = True) -> bytes:
 
     if len(ctx) > 255:
-        return []
+        return b""
 
-    # addrnd = secrets.token_bytes(params.prm.n)  # Skip for deterministic variant
-    # if addrnd is None:
-    #     return []
-    addrnd = SK[2]
+    if deterministic:
+        addrnd = SK[2 * params.prm.n:3 * params.prm.n]
+    else:
+        addrnd = secrets.token_bytes(params.prm.n)  # Skip for deterministic variant
+        if addrnd is None:
+            return b""
 
     # NOTE we initialize PHM as an array with 64 bytes
     PHM = bytearray([0] * 64)
@@ -85,26 +76,16 @@ def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: tuple) -> list:  # Input: Me
     M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID
     M_prime = bytearray(M_prime) + PHM
 
-    # Sign the M' message
-    SIG = slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
-
-    return SIG                                  # Output: SLH-DSA signature SIG
+    return slh_sign_internal(M_prime, SK, addrnd)  # Omit addrnd for deterministic variant
 
 
 # Algorithmus 24 (Verifies a pure SLH-DSA signature)
-def slh_verify(M: bytes, SIG: list, ctx: list, PK: tuple) -> bool:        # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, public key PK
-
-    if len(ctx) > 255:
-        return False
-
-    M_prime = toByte(0, 1) + toByte(len(ctx), 1) + ctx
-    M_prime = bytearray(M_prime) + M
-
-    return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
+def slh_verify(M: bytes, SIG: bytes, PK: bytes) -> bool:
+    return slh_verify_internal(M, SIG, PK)
 
 
 # Algorithmus 25 (Verifies a pre-hash SLH-DSA signature)
-def hash_slh_verify(M: bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> bool:   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
+def hash_slh_verify(M: bytes, SIG: bytes, ctx: list, PH: str, PK: bytes) -> bool:   # Input: Message 𝑀, signature SIG, context string 𝑐𝑡𝑥, pre-hash function PH, public key PK
 
     if len(ctx) > 255:
         return False
@@ -132,4 +113,4 @@ def hash_slh_verify(M: bytes, SIG: list, ctx: list, PH: str, PK: tuple) -> bool:
     M_prime = toByte(1, 1) + toByte(len(ctx), 1) + ctx + OID
     M_prime = bytearray(M_prime) + PHM
 
-    return slh_verify_internal(M_prime, SIG, PK)    # Output: Boolean
+    return slh_verify_internal(M_prime, SIG, PK)

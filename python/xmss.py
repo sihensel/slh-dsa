@@ -34,7 +34,7 @@ def xmss_node(sk_seed: bytes, i: int, z: int, pk_seed: bytes, adrs: ADRS) -> byt
 
 
 # algorithm 10
-def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) -> list:
+def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) -> bytes:
     """
     Generates an XMSS signature
     
@@ -47,13 +47,10 @@ def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) ->
     Returns:
         xmss signature
     """
-    AUTH: list = [0] * params.prm.h_
+    AUTH = b""
     for j in range(params.prm.h_):
         k = floor(idx / (2 ** j)) ^ 1
-        # alternative:
-        # k = (idx >> j) ^ 1
-        # https://github.com/slh-dsa/sloth/blob/f202c5f3fa4916f176f5d80f63be3fda6d5cb999/slh/slh_dsa.c#L241
-        AUTH[j] = xmss_node(sk_seed, k, j, pk_seed, adrs)
+        AUTH += xmss_node(sk_seed, k, j, pk_seed, adrs)
 
     adrs.setTypeAndClear(params.prm.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
@@ -63,7 +60,7 @@ def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) ->
 
 
 # algorithm 11
-def xmss_pkFromSig(idx: int, sig_xmss: list , M: bytes, pk_seed: bytes, adrs: ADRS) -> bytes:
+def xmss_pkFromSig(idx: int, sig_xmss: bytes , M: bytes, pk_seed: bytes, adrs: ADRS) -> bytes:
     """
     Computes an XMSS public key from an XMSS signature
 
@@ -76,41 +73,24 @@ def xmss_pkFromSig(idx: int, sig_xmss: list , M: bytes, pk_seed: bytes, adrs: AD
     Returns:
         n-byte root value node[0]
     """
-    node: list = [0, 0]
     adrs.setTypeAndClear(params.prm.WOTS_HASH)
     adrs.setKeyPairAddress(idx)
 
-    sig = getWOTSSig(sig_xmss)
-    AUTH = getXMSSAUTH(sig_xmss)
+    sig = sig_xmss[0:params.prm.len * params.prm.n]
+    AUTH = sig_xmss[params.prm.len * params.prm.n:]
 
-    node[0] = wots_pkFromSig(sig, M, pk_seed, adrs)
+    node_0 = wots_pkFromSig(sig, M, pk_seed, adrs)
     adrs.setTypeAndClear(params.prm.TREE)
     adrs.setTreeIndex(idx)
 
     for k in range(params.prm.h_):
         adrs.setTreeHeight(k + 1)
-        # alternative: if ((idx >> k) & 1) == 0:
+        auth_k = AUTH[k * params.prm.n:(k + 1) * params.prm.n]
         if floor(idx / (2 ** k)) % 2 == 0:
             adrs.setTreeIndex(int(adrs.getTreeIndex() / 2))
-            node[1] = H(pk_seed, adrs, node[0] + AUTH[k])
+            node_1 = H(pk_seed, adrs, node_0 + auth_k)
         else:
             adrs.setTreeIndex(int((adrs.getTreeIndex() - 1) / 2))
-            node[1] = H(pk_seed, adrs, AUTH[k] + node[0])
-        node[0] = node[1]
-    return node[0]
-
-
-def getWOTSSig(sig_xmss: list) -> list:
-    """
-    Returns the WOTS+ signature of a XMSS signature
-    The WOTS+ signature always has len elements
-    """
-    return sig_xmss[0:params.prm.len]
-
-
-def getXMSSAUTH(sig_xmss: list) -> list:
-    """
-    Returns the authentication path of a XMSS signature
-    The authentication path consists of h' elements
-    """
-    return sig_xmss[params.prm.len:params.prm.len + params.prm.h_]
+            node_1 = H(pk_seed, adrs, auth_k + node_0)
+        node_0 = node_1
+    return node_0

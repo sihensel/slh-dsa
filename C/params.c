@@ -3,10 +3,7 @@
 #include "params.h"
 
 void setup_parameter_set(Parameters *prm, const char* name) {
-    // NOTE: this approach uses a global variable, but since we only read parameters
-    // and never change them at runtime we should be fine
-
-    // Initialize common parameters
+    // Initialize common variables for all parameters sets
     prm->WOTS_HASH = 0;
     prm->WOTS_PK = 1;
     prm->TREE = 2;
@@ -73,7 +70,7 @@ void setup_parameter_set(Parameters *prm, const char* name) {
         prm->m = 49;
     }
     else {
-        printf("invalid parameter set\n");
+        printf("Invalid parameter set name\n");
         return;
     }
 

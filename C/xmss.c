@@ -63,7 +63,6 @@ void xmss_pkFromSig(Parameters *prm, uint64_t idx, const uint8_t *sig_xmss, cons
 
     uint8_t sig[prm->len * prm->n];
     uint8_t AUTH[prm->h_ * prm->n];
-    // NOTE this replaces getWOTSSig and getXMSSAUTH
     memcpy(sig, sig_xmss, prm->len * prm->n);
     memcpy(AUTH, sig_xmss + prm->len * prm->n, prm->h_ * prm->n);
 

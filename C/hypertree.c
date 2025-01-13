@@ -55,7 +55,6 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
 
     uint8_t node[prm->n];
     uint8_t sig_tmp[xmss_sig_len];
-    // NOTE this replaces getXMSSSignature
     memcpy(sig_tmp, sig_ht, xmss_sig_len);
     xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, node);
 
@@ -64,7 +63,6 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
         idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
-        // NOTE this replaces getXMSSSignature
         memcpy(sig_tmp, sig_ht + j * xmss_sig_len, xmss_sig_len);
         xmss_pkFromSig(prm, idx_leaf, sig_tmp, node, pk_seed, adrs, node);
     }

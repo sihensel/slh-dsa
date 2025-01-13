@@ -32,7 +32,7 @@ void slh_keygen_internal(Parameters *prm, uint8_t *sk_seed, uint8_t *sk_prf, uin
 // algorithm 19
 void slh_sign_internal(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *SK, const uint8_t *addrnd, uint8_t *buffer)
 {
-    // NOTE precompute these values to make the code cleaner
+    // precompute these values to make the code cleaner
     uint64_t param1 = (uint64_t) ceil(prm->k * prm->a / 8.0);
     uint64_t param2 = (uint64_t) ceil((prm->h - (float)prm->h / prm->d) / 8.0);
     uint64_t param3 = (uint64_t) ceil(prm->h / (prm->d * 8.0));

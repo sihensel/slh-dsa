@@ -74,7 +74,7 @@ def setup_parameter_set(name: str):
         prm.m = 49
 
     else:
-        print("invalid parameter set")
+        print("Invalid parameter set name")
 
     # calculate len1 and len
     prm.len1 = 2 * prm.n

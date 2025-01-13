@@ -13,11 +13,11 @@ def H_msg(R: bytes, pk_seed: bytes, pk_root: bytes, M: bytes) -> bytes:
     return h.digest(params.prm.m)
 
 
-def PRF(pk_seed: bytes, sk_seed: bytes, adrs: ADRS) -> bytes:
+def PRF(pk_seed: bytes, adrs: ADRS, sk_seed: bytes) -> bytes:
     h = hashlib.shake_256()
     h.update(pk_seed)
-    h.update(sk_seed)
     h.update(bytearray(adrs.getADRS()))
+    h.update(sk_seed)
     return h.digest(params.prm.n)
 
 
@@ -29,17 +29,12 @@ def PRF_msg(sk_prf: bytes, opt_rand: bytes, M: bytes) -> bytes:
     return h.digest(params.prm.n)
 
 
-def F(pk_seed: bytes, adrs: ADRS, M1: bytes|list) -> bytes:
+def F(pk_seed: bytes, adrs: ADRS, M1: bytes) -> bytes:
     h = hashlib.shake_256()
     h.update(pk_seed)
     h.update(bytearray(adrs.getADRS()))
-    if type(M1) is list:
-        for i in M1:
-            h.update(i)
-    else:
-        h.update(M1)
+    h.update(M1)
     return h.digest(params.prm.n)
-    return shake256(pk_seed, adrs.getADRS(), M1, out_len=params.prm.n)
 
 
 def H(pk_seed: bytes, adrs: ADRS, M2: bytes) -> bytes:
@@ -50,10 +45,9 @@ def H(pk_seed: bytes, adrs: ADRS, M2: bytes) -> bytes:
     return h.digest(params.prm.n)
 
 
-def Tlen(pk_seed: bytes, adrs: ADRS, Ml: list[bytes]) -> bytes:
+def Tlen(pk_seed: bytes, adrs: ADRS, Ml: bytes) -> bytes:
     h = hashlib.shake_256()
     h.update(pk_seed)
     h.update(bytearray(adrs.getADRS()))
-    for i in Ml:
-        h.update(i)
+    h.update(Ml)
     return h.digest(params.prm.n)

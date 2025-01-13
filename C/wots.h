@@ -5,7 +5,7 @@
 
 uint8_t gen_len2(uint32_t n, uint32_t lg_w);
 
-void base_2b(const uint8_t *X, uint64_t b, uint32_t out_len, uint8_t *baseb);
+void base_2b(const uint8_t *X, uint64_t b, uint32_t out_len, uint32_t *baseb);
 
 void chain(Parameters *prm, const uint8_t *X, uint64_t i, uint64_t s, const uint8_t *PK_seed, ADRS *adrs, uint8_t *buffer);
 

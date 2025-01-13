@@ -6,22 +6,8 @@ from adrs import ADRS
 from xmss import xmss_sign, xmss_pkFromSig
 
 
-def getXMSSSignature(sig_ht: list, idx: int) -> list:
-    """
-    Get one XMSS signature (WOTS+ sig and authentication path) from a hypertree signature
-    Params:
-        sig_ht: hypertree signature
-        idx:    index of the XMSS signature in sig_ht
-    """
-    # hypertree signatures contain d XMSS signatures
-    # each XMSS signature is h' + len elements
-    start = idx * (params.prm.h_ + params.prm.len)
-    end = (idx + 1) * (params.prm.h_ + params.prm.len)
-    return sig_ht[start:end]
-
-
 # algorithm 12
-def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int) -> list:
+def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int) -> bytes:
     """
     Generates a hypertree signature
 
@@ -55,7 +41,7 @@ def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: i
 
 
 # algorithm 13
-def ht_verify(M: bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: int, pk_root: bytes) -> bool:
+def ht_verify(M: bytes, sig_ht: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: int, pk_root: bytes) -> bool:
     """
     Verifies a hypertree signature
 
@@ -71,7 +57,7 @@ def ht_verify(M: bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: i
     """
     adrs = ADRS()
     adrs.setTreeAddress(idx_tree)
-    sig_tmp = getXMSSSignature(sig_ht, 0)
+    sig_tmp = sig_ht[0:(params.prm.h_ + params.prm.len) * params.prm.n]
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, params.prm.d):
@@ -79,7 +65,7 @@ def ht_verify(M: bytes, sig_ht: list, pk_seed: bytes, idx_tree: int, idx_leaf: i
         idx_tree = idx_tree >> params.prm.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
-        sig_tmp = getXMSSSignature(sig_ht, j)
+        sig_tmp = sig_ht[j * (params.prm.h_ + params.prm.len) * params.prm.n:(j + 1) * (params.prm.h_ + params.prm.len) * params.prm.n]
         node = xmss_pkFromSig(idx_leaf, sig_tmp, node, pk_seed, adrs)
 
     return node == pk_root

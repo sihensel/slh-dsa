@@ -14,7 +14,7 @@ void F(Parameters *prm, const uint8_t *pk_seed, const ADRS *adrs, const uint8_t 
 
 void Tlen(Parameters *prm, const uint8_t *pk_seed, const ADRS *adrs, uint8_t *Ml, size_t Ml_len, uint8_t *buffer);
 
-void PRF(Parameters *prm, const uint8_t *pk_seed, const uint8_t *sk_seed, const ADRS *adrs, uint8_t *buffer);
+void PRF(Parameters *prm, const uint8_t *pk_seed, const ADRS *adrs, const uint8_t *sk_seed, uint8_t *buffer);
 
 void SHA_256(const uint8_t *M, size_t M_len, uint8_t *buffer);
 

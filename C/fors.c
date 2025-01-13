@@ -14,7 +14,7 @@ void fors_skGen(Parameters *prm, const uint8_t *sk_seed, const uint8_t *pk_seed,
     setTypeAndClear(&sk_adrs, prm->FORS_PRF);
     setKeyPairAddress(&sk_adrs, getKeyPairAddress(&adrs));
     setTreeIndex(&sk_adrs, idx);
-    PRF(prm, pk_seed, sk_seed, &sk_adrs, buffer);
+    PRF(prm, pk_seed, &sk_adrs, sk_seed, buffer);
 }
 
 // Algorithm 15 (Computes the root of a Merkle subtree of FORS public values)
@@ -52,7 +52,7 @@ void fors_sign(Parameters *prm, const uint8_t *md, const uint8_t *sk_seed, const
 {
     uint32_t sig_len = prm->n + prm->a * prm->n;
     uint8_t sig_fors[sig_len * prm->k];
-    uint8_t indices[prm->k];
+    uint32_t indices[prm->k];
     uint8_t auth[prm->a * prm->n];
     base_2b(md, prm->a, prm->k, indices);
 
@@ -72,7 +72,7 @@ void fors_sign(Parameters *prm, const uint8_t *md, const uint8_t *sk_seed, const
 void fors_pkFromSig(Parameters *prm, uint8_t *sig_fors, const uint8_t *md, const uint8_t *pk_seed, ADRS adrs, uint8_t *buffer)
 {
     uint32_t sig_len = prm->n + prm->a * prm->n;
-    uint8_t indices[prm->k];
+    uint32_t indices[prm->k];
     base_2b(md, prm->a, prm->k, indices);
 
     uint8_t sk[prm->n];

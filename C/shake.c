@@ -79,7 +79,7 @@ void Tlen(Parameters *prm, const uint8_t *pk_seed, const ADRS *adrs, uint8_t *Ml
     gcry_md_close(h);
 }
 
-void PRF(Parameters *prm, const uint8_t *pk_seed, const uint8_t *sk_seed, const ADRS *adrs, uint8_t *buffer)
+void PRF(Parameters *prm, const uint8_t *pk_seed, const ADRS *adrs, const uint8_t *sk_seed, uint8_t *buffer)
 {
     // initialize hash context
     gcry_md_hd_t h;
@@ -87,8 +87,8 @@ void PRF(Parameters *prm, const uint8_t *pk_seed, const uint8_t *sk_seed, const 
 
     // add data to context
     gcry_md_write(h, pk_seed, prm->n);
-    gcry_md_write(h, sk_seed, prm->n);
     gcry_md_write(h, adrs->adrs, ADRS_SIZE);
+    gcry_md_write(h, sk_seed, prm->n);
 
     // get the result
     gcry_md_extract(h, GCRY_MD_SHAKE256, buffer, prm->n);

@@ -1,94 +1,48 @@
 #!/usr/bin/env python3
 
-import time
-
 from external import slh_keygen, slh_sign, slh_verify
-from external import hash_slh_sign, hash_slh_verify
 from params import setup_parameter_set
-
-
-def main(M: bytes,
-         gen_keypair: bool=False,
-         sign_msg_hash: bool=False,
-         verify: bool=False,
-         SK: tuple[bytes, bytes, bytes, bytes]=(b"", b"", b"", b""),
-         PK: tuple[bytes, bytes]=(b"", b""),
-         sig: list[bytes]=[],
-         parameter_set: str="SLH-DSA-SHAKE-128f"
-    ) -> bool:
-
-    setup_parameter_set(parameter_set)
-
-    if gen_keypair:
-        SK, PK = slh_keygen()
-        with open("key.txt", "w") as fp:
-            print("writing key data into key.txt")
-            fp.write(SK[0].hex() + SK[1].hex() + SK[2].hex() + SK[3].hex() + "\n")
-            fp.write(SK[2].hex() + SK[3].hex() + "\n")
-
-    # ctx is usually initialized as an empty byte array
-    ctx = [0]
-
-    if sign_msg_hash:
-        if verify:
-            return hash_slh_verify(M, sig, ctx, "SHA-256", PK)
-        else:
-            # create signature of hash(M) and verify
-            sig = hash_slh_sign(M, ctx, "SHA-256", SK)
-            with open("sig.txt", "w") as fp:
-                print("writing signature to signature.txt")
-                data = [i.hex() for i in sig]
-                for i in data:
-                    fp.write(i + "\n")
-    else:
-        if verify:
-            return slh_verify(M, sig, ctx, PK)
-        else:
-            # create signature of M and verify
-            sig = slh_sign(M, ctx, SK)
-            with open("sig.txt", "w") as fp:
-                print("writing signature to signature.txt")
-                data = [i.hex() for i in sig]
-                for i in data:
-                    fp.write(i + "\n")
-    return True
 
 
 if __name__ == "__main__":
 
-    M = bytearray([1, 2, 3, 4])
-    # setup_parameter_set("SLH-DSA-SHAKE-128f")
-    # SK, PK = slh_keygen()
-    # ctx = [0]
-    # sig = slh_sign(M, ctx, SK)
-    # res = slh_verify(M, sig, ctx, PK)
-    # print(res)
+    # test vectors from https://github.com/usnistgov/ACVP-Server/tree/master
 
-    # read key data from file
-    # with open("key.txt", "r") as fp:
-    #     data = [line.rstrip() for line in fp]
-    #     SK = bytes.fromhex(data[0])
-    #     SK = (SK[0:16], SK[16:32], SK[32:48], SK[48:])
-    #     PK = bytes.fromhex(data[1])
-    #     PK = (PK[0:16], PK[16:])
-    #
-    # # read signature from file
-    # with open("sig.txt", "r") as fp:
-    #     data = [line.rstrip() for line in fp]
-    #     sig = [bytes.fromhex(i) for i in data]
+    setup_parameter_set("SLH-DSA-SHAKE-128f")
+    # test key gen SLH-DSA-SHAKE-128f
+    sk_seed = bytes.fromhex("BBC74306F75DC2DAF7372B3C9841A4D6")
+    sk_prf  = bytes.fromhex("852C17B459F1692B8E9A1A0DACE5BA26")
+    pk_seed = bytes.fromhex("380C99304A0DDD32F344B95144E1FDEF")
+    SK, PK = slh_keygen(sk_seed, sk_prf, pk_seed)
 
-    verify = False
-    start = time.time()
-    result = main(M=M,
-                  gen_keypair=True,
-                  sign_msg_hash=False,
-                  verify=verify,
-                  # SK=SK,
-                  # PK=PK,
-                  # sig=sig,
-                  parameter_set="SLH-DSA-SHAKE-128f"
-                  )
-    end = time.time()
-    print(f"Took {end - start} seconds")
-    if verify:
-        print("signature valid") if result else print("signature invalid")
+    assert PK.hex().upper() == "380C99304A0DDD32F344B95144E1FDEF60BBC2340E08770FB41A80A76CB08E34"
+
+    # test sig gen SLH-DSA-SHAKE-128f
+    SK = bytes.fromhex("1E464D08EF2F1A2509DBCB207BEE9E3BD314BC356857155836412601F09684927F5023810597D9A4B611F0E1B5ED965F7CBA20C4F6DB19D44FB1D4EE142B44AA")
+    M = bytes.fromhex("DB2AC8E44B2DA9CC5813B11FBDE28081326BD0542971899CF9086212246D6BE761E4E37118B7FDEE9A777979CC132E6CEDEF8EE6D6FF20BE9BE19B491C4443D28C7D33EB4E6E71C051A6534930257E94527F566740F76594D032DF8A784F94EEC0AA9F4AA880EB4356CEDE3B93F0F17B6B1398B132047C2BC8DB6C39B2C88F30E2E73A21A1E9A8EA30886CBC232D6F3C6C9252077F77D6FBCB4034506A1B")
+    SIG = slh_sign(M, SK, deterministic=True)
+
+    assert SIG[0:16].hex().upper() == "2C241D50D55454CD5DBD8714CC8D6383"
+
+    # test sig verify SLH-DSA-SHAKE-192s
+    setup_parameter_set("SLH-DSA-SHAKE-192s")
+    with open("msg.txt", "r") as fp:
+        M = bytes.fromhex(fp.read())
+    with open("key.txt", "r") as fp:
+        PK = bytes.fromhex(fp.read())
+    with open("sig.txt", "r") as fp:
+        SIG = bytes.fromhex(fp.read())
+
+    assert slh_verify(M, SIG, PK) == True
+
+    # test sig verify SLH-DSA-SHAKE-256f
+    setup_parameter_set("SLH-DSA-SHAKE-256f")
+    with open("msg_256.txt", "r") as fp:
+        M = bytes.fromhex(fp.read())
+    with open("key_256.txt", "r") as fp:
+        PK = bytes.fromhex(fp.read())
+    with open("sig_256.txt", "r") as fp:
+        SIG = bytes.fromhex(fp.read())
+
+    assert slh_verify(M, SIG, PK) == True
+    print("Done")
