@@ -1,5 +1,4 @@
 from copy import deepcopy
-from math import floor
 
 import params
 from adrs import ADRS
@@ -57,7 +56,7 @@ def fors_sign(md: bytes, SK_seed: bytes, PK_seed: bytes, ADRS: ADRS) -> bytes:  
 
         AUTH = b""
         for j in range(params.prm.a):
-            s = floor(indices[i] / 2 ** j) ^ 1              # Compute auth path
+            s = (indices[i] >> j) ^ 1
             AUTH += fors_node(SK_seed, i * 2**(params.prm.a - j) + s, j, PK_seed, ADRS)
         SIG_FORS += AUTH
 

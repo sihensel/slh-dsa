@@ -1,5 +1,3 @@
-from math import floor
-
 import params
 from adrs import ADRS
 from shake import H
@@ -49,7 +47,7 @@ def xmss_sign(M: bytes, sk_seed: bytes, idx: int, pk_seed: bytes, adrs: ADRS) ->
     """
     AUTH = b""
     for j in range(params.prm.h_):
-        k = floor(idx / (2 ** j)) ^ 1
+        k = (idx >> j) ^ 1
         AUTH += xmss_node(sk_seed, k, j, pk_seed, adrs)
 
     adrs.setTypeAndClear(params.prm.WOTS_HASH)
@@ -86,7 +84,7 @@ def xmss_pkFromSig(idx: int, sig_xmss: bytes , M: bytes, pk_seed: bytes, adrs: A
     for k in range(params.prm.h_):
         adrs.setTreeHeight(k + 1)
         auth_k = AUTH[k * params.prm.n:(k + 1) * params.prm.n]
-        if floor(idx / (2 ** k)) % 2 == 0:
+        if (idx >> k) & 1 == 0:
             adrs.setTreeIndex(int(adrs.getTreeIndex() / 2))
             node_1 = H(pk_seed, adrs, node_0 + auth_k)
         else:

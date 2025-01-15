@@ -25,7 +25,11 @@ def slh_keygen(SK_seed: bytes = b"", SK_prf: bytes = b"", PK_seed: bytes = b"") 
 
 
 # Algorithmus 22 (Generates a pure SLH-DSA signature)
-def slh_sign(M: bytes, SK: bytes, deterministic: bool = True) -> bytes:
+def slh_sign(M: bytes, ctx: bytes, SK: bytes, deterministic: bool = True) -> bytes:
+
+    if len(ctx) > 255:
+        print("invalid conext length")
+        return b""
 
     # for deterministic variant, use PK_seed for addrnd
     if deterministic:
@@ -35,7 +39,10 @@ def slh_sign(M: bytes, SK: bytes, deterministic: bool = True) -> bytes:
         if addrnd is None:
             return b""
 
-    return slh_sign_internal(M, SK, addrnd)
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1)
+    M_prime = bytearray(M_prime) + ctx + M
+
+    return slh_sign_internal(M_prime, SK, addrnd)
 
 
 # Algorithmus 23 (Generates a pre-hash SLH-DSA signature)
@@ -80,8 +87,14 @@ def hash_slh_sign(M: bytes, ctx: list, PH: str, SK: bytes, deterministic: bool =
 
 
 # Algorithmus 24 (Verifies a pure SLH-DSA signature)
-def slh_verify(M: bytes, SIG: bytes, PK: bytes) -> bool:
-    return slh_verify_internal(M, SIG, PK)
+def slh_verify(M: bytes, ctx: bytes, SIG: bytes, PK: bytes) -> bool:
+    if len(ctx) > 255:
+        print("invalid context length")
+        return False
+
+    M_prime = toByte(0, 1) + toByte(len(ctx), 1)
+    M_prime = bytearray(M_prime) + ctx + M
+    return slh_verify_internal(M_prime, SIG, PK)
 
 
 # Algorithmus 25 (Verifies a pre-hash SLH-DSA signature)

@@ -28,7 +28,7 @@ def ht_sign(M: bytes, sk_seed: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: i
     root = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, params.prm.d):
-        idx_leaf = idx_tree % (2 ** params.prm.h_)
+        idx_leaf = idx_tree & ((1 << params.prm.h_) - 1)
         idx_tree = idx_tree >> params.prm.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)
@@ -61,7 +61,7 @@ def ht_verify(M: bytes, sig_ht: bytes, pk_seed: bytes, idx_tree: int, idx_leaf: 
     node = xmss_pkFromSig(idx_leaf, sig_tmp, M, pk_seed, adrs)
 
     for j in range(1, params.prm.d):
-        idx_leaf = int(idx_tree % (2 ** params.prm.h_))
+        idx_leaf = idx_tree & ((1 << params.prm.h_) - 1)
         idx_tree = idx_tree >> params.prm.h_
         adrs.setLayerAddress(j)
         adrs.setTreeAddress(idx_tree)

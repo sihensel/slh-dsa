@@ -1,5 +1,3 @@
-from math import ceil
-
 import params
 from adrs import ADRS, toInt
 from fors import fors_sign, fors_pkFromSig
@@ -19,9 +17,9 @@ def slh_keygen_internal(sk_seed: bytes, sk_prf: bytes, pk_seed: bytes) -> tuple:
 # algorithm 19
 def slh_sign_internal(M: bytes, SK: bytes, addrnd: bytes) -> bytes:
     # precompute these values to make the code cleaner
-    param1 = ceil(params.prm.k * params.prm.a / 8)
-    param2 = ceil((params.prm.h - params.prm.h / params.prm.d) / 8)
-    param3 = ceil(params.prm.h / (params.prm.d * 8))
+    index1 = (params.prm.k * params.prm.a + 7) // 8
+    index2 = ((params.prm.h - (params.prm.h // params.prm.d)) + 7) // 8
+    index3 = ((params.prm.h // params.prm.d) + 7) // 8
 
     sk_seed = SK[0               :params.prm.n]
     sk_prf  = SK[    params.prm.n:2 * params.prm.n]
@@ -34,12 +32,12 @@ def slh_sign_internal(M: bytes, SK: bytes, addrnd: bytes) -> bytes:
     R = PRF_msg(sk_prf, addrnd, M)
     SIG += R
     digest = H_msg(R, pk_seed, pk_root, M)
-    md = digest[0:param1]
-    tmp_idx_tree = digest[param1:param1 + param2]
-    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + param3]
+    md = digest[0:index1]
+    tmp_idx_tree = digest[index1:index1 + index2]
+    tmp_idx_leaf = digest[index1 + index2:index1 + index2 + index3]
 
-    idx_tree = toInt(tmp_idx_tree, param2) % 2 ** int(params.prm.h - params.prm.h / params.prm.d)
-    idx_leaf = toInt(tmp_idx_leaf, param3) % 2 ** int(params.prm.h / params.prm.d)
+    idx_tree = toInt(tmp_idx_tree, index2) % (2 ** (params.prm.h - (params.prm.h // params.prm.d)))
+    idx_leaf = toInt(tmp_idx_leaf, index3) % (2 ** (params.prm.h // params.prm.d))
 
     adrs.setTreeAddress(idx_tree)
     adrs.setTypeAndClear(params.prm.FORS_TREE)
@@ -56,9 +54,9 @@ def slh_sign_internal(M: bytes, SK: bytes, addrnd: bytes) -> bytes:
 
 # algorithm 20
 def slh_verify_internal(M: bytes, SIG: bytes, PK: bytes) -> bool:
-    param1 = ceil(params.prm.k * params.prm.a / 8)
-    param2 = ceil((params.prm.h - params.prm.h / params.prm.d) / 8)
-    param3 = ceil(params.prm.h / (params.prm.d * 8))
+    index1 = (params.prm.k * params.prm.a + 7) // 8
+    index2 = ((params.prm.h - (params.prm.h // params.prm.d)) + 7) // 8
+    index3 = ((params.prm.h // params.prm.d) + 7) // 8
 
     pk_seed = PK[0:params.prm.n]
     pk_root = PK[params.prm.n:]
@@ -73,11 +71,11 @@ def slh_verify_internal(M: bytes, SIG: bytes, PK: bytes) -> bool:
     SIG_HT = SIG[(1 + params.prm.k * (1 + params.prm.a)) * params.prm.n:]
 
     digest = H_msg(R, pk_seed, pk_root, M)
-    md = digest[0: param1]
-    tmp_idx_tree = digest[param1:param1 + param2]
-    tmp_idx_leaf = digest[param1 + param2:param1 + param2 + param3]
-    idx_tree = toInt(tmp_idx_tree, param2) % 2 ** int(params.prm.h - params.prm.h / params.prm.d)
-    idx_leaf = toInt(tmp_idx_leaf, param3) % 2 ** int(params.prm.h / params.prm.d)
+    md = digest[0:index1]
+    tmp_idx_tree = digest[index1:index1 + index2]
+    tmp_idx_leaf = digest[index1 + index2:index1 + index2 + index3]
+    idx_tree = toInt(tmp_idx_tree, index2) % (2 ** (params.prm.h - (params.prm.h // params.prm.d)))
+    idx_leaf = toInt(tmp_idx_leaf, index3) % (2 ** (params.prm.h // params.prm.d))
 
     adrs.setTreeAddress(idx_tree)
     adrs.setTypeAndClear(params.prm.FORS_TREE)

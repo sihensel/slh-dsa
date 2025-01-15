@@ -1,26 +1,7 @@
-#include <math.h>
 #include <string.h>
 #include "params.h"
 #include "shake.h"
 #include "wots.h"
-
-// Algorithm 1 (Computes len2)
-// NOTE: we don't need this algorithm since len2 = 3 for all parameter sets
-uint8_t gen_len2(uint32_t n, uint32_t lg_w)
-{
-    uint32_t w = 1 << lg_w;                          // Compute w: w = 2^lg_w
-    uint32_t len1 = floor((8.0 * n + lg_w - 1) / lg_w); // Compute len1
-    uint32_t max_checksum = len1 * (w - 1);          // Compute maximum possible checksum value
-    uint32_t len2 = 1;                               // Initialize len2
-    uint32_t capacity = w;                           // Initialize capacity
-
-    while (capacity <= max_checksum) {          // Loop until capacity exceeds max_checksum
-        len2++;
-        capacity *= w;
-    }
-
-    return len2;
-}
 
 // Algorithm 4 (Computes the base 2^b representation of X)
 void base_2b(const uint8_t *X, uint64_t b, uint32_t out_len, uint32_t *baseb)

@@ -1,4 +1,3 @@
-#include <math.h>
 #include <string.h>
 #include "wots.h"
 #include "shake.h"
@@ -38,8 +37,7 @@ void xmss_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, uint64
 {
     uint8_t AUTH[prm->h_ * prm->n];
     for (uint32_t j = 0; j < prm->h_; j++) {
-        uint64_t k = (uint64_t) floor(idx / pow(2, j)) ^ 1;
-        // Alternative: uint32_t k = (idx >> j) ^ 1;
+        uint32_t k = (idx >> j) ^ 1;
         xmss_node(prm, sk_seed, k, j, pk_seed, adrs, AUTH + j * prm->n);
     }
 
@@ -73,7 +71,7 @@ void xmss_pkFromSig(Parameters *prm, uint64_t idx, const uint8_t *sig_xmss, cons
     uint8_t combined[2 * prm->n];
     for (uint32_t k = 0; k < prm->h_; k++) {
         setTreeHeight(&adrs, k + 1);
-        if ((uint64_t) floor(idx / pow(2, k)) % 2 == 0) {
+        if (((idx >> k) & 1) == 0) {
             setTreeIndex(&adrs, getTreeIndex(&adrs) / 2);
             memcpy(combined, node_0, prm->n);
             memcpy(combined + prm->n, AUTH + k * prm->n, prm->n);

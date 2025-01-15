@@ -36,8 +36,13 @@ void slh_keygen(Parameters *prm, uint8_t *SK_seed, uint8_t *SK_prf, uint8_t *PK_
 }
 
 // Algorithmus 22: Generiert eine reine SLH-DSA Signatur
-void slh_sign(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *SK, uint8_t *SIG, bool deterministic)
+void slh_sign(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *ctx, const size_t ctx_len, const uint8_t *SK, uint8_t *SIG, bool deterministic)
 {
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Invalid context length\n");
+        return;
+    }
+
     // for deterministic varaiant, use PK_seed for addrnd
     uint8_t addrnd[prm->n];
     if (deterministic == true) {
@@ -50,8 +55,14 @@ void slh_sign(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *SK, uint
         }
         randombytes_buf(addrnd, sizeof addrnd);
     }
+    uint8_t M_prime[1 + 1 + ctx_len + M_len];
+    M_prime[0] = 0;
+    toByte(ctx_len, 1, M_prime + 1);
 
-    slh_sign_internal(prm, M, M_len, SK, addrnd, SIG);
+    memcpy(M_prime + 2, ctx, ctx_len);
+    memcpy(M_prime + 2 + ctx_len, M, M_len);
+
+    slh_sign_internal(prm, M_prime, sizeof M_prime, SK, addrnd, SIG);
 }
 
 // Algorithmus 23: Generiert eine vorgehashte SLH-DSA Signatur
@@ -103,9 +114,19 @@ void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_
 }
 
 // Algorithmus 24: Verifiziert eine reine SLH-DSA Signatur
-bool slh_verify(Parameters *prm, uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, const uint8_t *PK)
+bool slh_verify(Parameters *prm, uint8_t *M, size_t M_len, uint8_t *SIG, size_t SIG_len, uint8_t *ctx, size_t ctx_len, const uint8_t *PK)
 {
-    return slh_verify_internal(prm, M, M_len, SIG, SIG_len, PK);
+    if (ctx_len > MAX_CTX_LENGTH) {
+        printf("Invalid context length\n");
+        return false;
+    }
+    uint8_t M_prime[1 + 1 + ctx_len + M_len];
+    M_prime[0] = 0;
+    toByte(ctx_len, 1, M_prime + 1);
+
+    memcpy(M_prime + 2, ctx, ctx_len);
+    memcpy(M_prime + 2 + ctx_len, M, M_len);
+    return slh_verify_internal(prm, M_prime, sizeof M_prime, SIG, SIG_len, PK);
 }
 
 // Algorithmus 25: Verifiziert eine vorgehashte SLH-DSA Signatur

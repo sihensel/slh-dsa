@@ -1,8 +1,6 @@
-#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-#include <stdio.h>
 #include "params.h"
 #include "adrs.h"
 #include "xmss.h"
@@ -27,7 +25,7 @@ void ht_sign(Parameters *prm, const uint8_t *M, const uint8_t *sk_seed, const ui
     xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, root);
 
     for (uint32_t j = 1; j < prm->d; j++) {
-        idx_leaf = idx_tree % (uint64_t) pow(2, prm->h_);
+        idx_leaf = idx_tree & ((1 << prm->h_) - 1);
         idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);
@@ -59,7 +57,7 @@ bool ht_verify(Parameters *prm, const uint8_t *M, const uint8_t *sig_ht, const u
     xmss_pkFromSig(prm, idx_leaf, sig_tmp, M, pk_seed, adrs, node);
 
     for (uint32_t j = 1; j < prm->d; j++) {
-        idx_leaf = idx_tree % (uint64_t) pow(2, prm->h_);
+        idx_leaf = idx_tree & ((1 << prm->h_) - 1);
         idx_tree = idx_tree >> prm->h_;
         setLayerAddress(&adrs, j);
         setTreeAddress(&adrs, idx_tree);

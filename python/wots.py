@@ -1,25 +1,8 @@
-from math import ceil, floor
 from copy import deepcopy
 
 import params
 from adrs import ADRS, toByte
 from shake import F, PRF, Tlen
-
-
-#Algorhitmus 1 (Computes 𝑙𝑒𝑛2)
-# NOTE we don't need this algorithm since len2 = 3 for all parameter sets
-def gen_len2(n: int, lg_w: int) -> int:          #Input: Security parameter 𝑛, bits per hash chain 𝑙𝑔_𝑤
-    w = 2 ** lg_w                                #Compute w: w = 2^lg_w
-    len1 = floor((8 * n + lg_w - 1) / lg_w) #Compute len1
-    max_checksum = len1 * (w - 1)                #Compute maximum possible checksum value
-    len2 = 1                                     #Initialize len2
-    capacity = w                                 #Initialize capacity
-
-    while capacity <= max_checksum:              #Loop until capacity exceeds max_checksum
-        len2 += 1
-        capacity *= w
-
-    return len2                                  #Output: 𝑙𝑒𝑛2
 
 
 #Algorithmus 4 (Computes the base 2𝑏 representation of 𝑋)
@@ -82,7 +65,7 @@ def wots_sign(M: bytes, SK_seed: bytes, PK_seed: bytes, adrs: ADRS) -> bytes:   
     # NOTE is the same as  (8 - ((params.prm.len2 * params.prm.lg_w) % 8)) % 8
     # len2 and lg_w are static across all parameter sets, so the above equation returns always 4
     csum <<= 4
-    msg += base_2b(toByte(csum, ceil((params.prm.len2 * params.prm.lg_w) / 8)), params.prm.lg_w, params.prm.len2)  # Convert to base w
+    msg += base_2b(toByte(csum, (params.prm.len2 * params.prm.lg_w + 7) // 8), params.prm.lg_w, params.prm.len2)  # Convert to base w
 
     skADRS = deepcopy(adrs)                     # Copy address to create key generation key address
     skADRS.setTypeAndClear(params.prm.WOTS_PRF)
@@ -108,7 +91,7 @@ def wots_pkFromSig(sig: bytes, M: bytes, PK_seed: bytes, adrs: ADRS) -> bytes:
     # NOTE is the same as (8 - ((params.prm.len2 * params.prm.lg_w) % 8)) % 8
     # len2 and lg_w are static across all parameter sets, so the above equation returns always 4
     csum <<= 4
-    msg += base_2b(toByte(csum, ceil((params.prm.len2 * params.prm.lg_w) / 8)), params.prm.lg_w, params.prm.len2)  # Konvertiere in Basis w
+    msg += base_2b(toByte(csum, (params.prm.len2 * params.prm.lg_w + 7) // 8), params.prm.lg_w, params.prm.len2)  # Konvertiere in Basis w
 
     tmp = b""
     for i in range(params.prm.len):
