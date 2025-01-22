@@ -5,7 +5,7 @@
 
 
 %%%% 1. DOCUMENTCLASS %%%%
-\documentclass[journal=tosc,notanonymus]{iacrtrans}
+\documentclass[journal=tosc,notanonymous]{iacrtrans}
 %%%% NOTES:
 % - Change "journal=tosc" to "journal=tches" if needed
 % - Change "submission" to "final" for final version
@@ -17,11 +17,10 @@
 
 
 %%%% 3. AUTHOR, INSTITUTE %%%%
+
 \author{Simon Hensel\inst{1} \and Helena Richter\inst{2}}
-\institute{Albstadt-Sigmaringen University, Albstadt, Germany, \email{xxx@hs-albsig.de} \and
+\institute{Albstadt-Sigmaringen University, Albstadt, Germany, \email{hensels1@hs-albsig.de} \and
 	Albstadt-Sigmaringen University, Albstadt, Germany, \email{richtehe@hs-albsig.de}}
-
-
 %%%% NOTES:
 % - We need a city name for indexation purpose, even if it is redundant
 %   (eg: University of Atlantis, Atlantis, Atlantis)
@@ -30,8 +29,8 @@
 
 
 %%%% 4. TITLE %%%%
-\title[Stateless Hash-Based Digital Signature Standard]{SLH-DSA: Stateless Hash-Based Digital Signature Standard}
-\subtitle{Dokumentation zur Implementierung und Anwendung}
+\title{Stateless Hash-Based Digital Signature Standard}
+\subtitle{Dokumentation}
 %%%% NOTES:
 % - If the title is too long, or includes special macro, please
 %   provide a "running title" as optional argument: \title[Short]{Long}
@@ -57,26 +56,41 @@
 %%%% 7. PAPER CONTENT %%%%
 \section{Introduction}
 
-Widely used primitives like the AES~\cite{AES} do not have perfect
-security, and can be analysed with linear
-cryptanalysis~\cite{EC:Matsui93}, differential
-cryptanalysis~\cite{JC:BihSha91}, or differential power
-analysis~\cite{C:KocJafJun99}.  We show that the One-Time-Pad is
-unconditionally secure in \autoref{sec:main}.
+In the realm of modern cryptography, ensuring data integrity and authenticity is a cornerstone of secure communication and digital transactions. Digital Signature Algorithms (DSAs) are pivotal in this context, enabling entities to validate the provenance and integrity of data without the need for direct interaction. Among the diverse array of DSAs, the Stateless Hash-based Digital Signature Algorithm (Stateless Hash-DSA) emerges as a robust and efficient cryptographic solution tailored for secure, lightweight, and future-proof applications.
+\\
+This project aims to explore and implement the Stateless Hash-DSA, an advanced algorithm designed to leverage the inherent strength of hash functions while addressing challenges associated with stateful signature schemes. Unlike traditional approaches that rely on maintaining and managing state information, Stateless Hash-DSA eliminates the complexities of state management, thereby reducing operational risks such as accidental state reuse—a common vulnerability in stateful systems.
+\\
+By implementing the Stateless Hash-DSA, this project contributes to the advancement of secure digital signature techniques suitable for environments where simplicity, efficiency, and resistance to quantum adversaries are crucial. The following documentation outlines the theoretical foundations, implementation details, and practical applications of the Stateless Hash-DSA.
 
+\section{Hash-based Cryptography}
+
+Stateless hash algorithms are cryptographic methods that leverage hash functions to ensure security while eliminating the need to maintain state information during operation. In traditional stateful algorithms, maintaining a record of past operations is essential to prevent vulnerabilities such as key or signature reuse. However, this reliance on state can introduce operational complexities and risks, particularly in distributed or constrained environments.
+\\
+By contrast, stateless hash algorithms operate without requiring a persistent state, relying solely on the cryptographic strength of hash functions to secure data. This design simplifies implementation, reduces the risk of errors associated with state management, and enhances resilience against attacks that exploit state inconsistencies. Stateless approaches are especially valuable in applications like digital signatures, where lightweight, efficient, and secure operations are critical.
+\\
+Stateless hash algorithms are also well-suited for post-quantum cryptography, leveraging the inherent robustness of hash functions against quantum adversaries, ensuring their applicability in future cryptographic systems.
+
+\section{Digital Signature Algorithm (DSA)}
+The Stateless Hash-based Digital Signature Algorithm (SLH-DSA) is a cryptographic scheme that combines the strength of hash-based security with the simplicity and efficiency of a stateless design. SLH-DSA is a robust alternative to traditional digital signature algorithms, addressing challenges such as state management, accidental key reuse, and scalability in distributed or resource-constrained environments.
+\\
+At its core, SLH-DSA employs cryptographic hash functions to generate secure, verifiable signatures. Unlike stateful algorithms that require persistent tracking of used keys or states to ensure security, SLH-DSA eliminates this dependency by deriving keys and signatures dynamically in a manner that guarantees their uniqueness and integrity. This stateless approach significantly reduces the operational risks and complexities associated with managing and safeguarding state information.\\
+\\
+The Algorithm can be divided into 4 Steps:
+\begin{enumerate}
+	\item \textbf{Key Generation} of private and public key
+	\item \textbf{Key Distribution}  of public key
+	\item \textbf{Signature Generation} by sender
+	\item \textbf{Signature Verification} by receiver
+\end{enumerate}
+SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers enhanced security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
+\\
+This algorithm is a key step toward creating secure, efficient, and future-proof digital systems, making it a compelling choice for developers and security professionals seeking innovative cryptographic solutions.
+
+\section{Implementing the Algorithm}
 \lipsum[9]
+\subsection{Python}
 
-\section{Exploring the SLH-DSA Signature Scheme}
-\label{sec:overview}
-
-\section{Implementation}
-\label{sec:main}
-\subsection{Functions and Addressing}
-
-\lipsum[10]
-\subsection{WOTS+}
-\subsection{XMSS}
-\subsection{FORS}
+\subsection{C}
 
 
 %%%% 8. BILBIOGRAPHY %%%%
