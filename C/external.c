@@ -66,20 +66,25 @@ void slh_sign(Parameters *prm, uint8_t *M, size_t M_len, const uint8_t *ctx, con
 }
 
 // Algorithmus 23: Generiert eine vorgehashte SLH-DSA Signatur
-void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *SK, uint8_t *SIG)
+void hash_slh_sign(Parameters *prm, const uint8_t *M, size_t M_len, const uint8_t *ctx, size_t ctx_len, const char *PH, const uint8_t *SK, uint8_t *SIG, bool deterministic)
 {
     if (ctx_len > MAX_CTX_LENGTH) {
         printf("Context is longer that %d\n", MAX_CTX_LENGTH);
         return;
     }
 
+    // for deterministic varaiant, use PK_seed for addrnd
     uint8_t addrnd[prm->n];
-    if (sodium_init() < 0) {
-        printf("Error initalizing sodium library\n");
-        return;
+    if (deterministic == true) {
+        memcpy(addrnd, SK + 2 * prm->n, prm->n);
     }
-    // randombytes_buf(addrnd, sizeof addrnd);
-    memcpy(addrnd, SK + 2 * prm->n, prm->n);
+    else {
+        if (sodium_init() < 0) {
+            printf("Error initalizing sodium library\n");
+            return;
+        }
+        randombytes_buf(addrnd, sizeof addrnd);
+    }
 
     uint8_t OID[11];
     uint8_t PHM[64] = {0};

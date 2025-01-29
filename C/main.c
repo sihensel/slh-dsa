@@ -146,7 +146,7 @@ int main(void)
 
             // test signing hash of M
             printf("Signing %s(M)\t", hash_functions[j]);
-            hash_slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, hash_functions[j], SK, SIG);
+            hash_slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, hash_functions[j], SK, SIG, true);
             result = hash_slh_verify(&prm, M, sizeof M, SIG, sizeof SIG, ctx, sizeof ctx, hash_functions[j], PK);
 
             if (result == true) printf("Signature valid\n");
