@@ -47,9 +47,7 @@
 
 %%%% 6. ABSTRACT %%%%
 \begin{abstract}
-  In this paper we prove that the One-Time-Pad has perfect security.
-
-  \lipsum[8]
+  \lipsum[1]
 \end{abstract}
 
 
@@ -105,12 +103,12 @@ After the FORS signature is created, the corresponding FORS public key is comput
 The final SLH-DSA signature is composed of three main components:
 the randomizer (\texttt{R}), which ensures the uniqueness of the signature, the FORS signature, which signs part of the message digest and the hypertree signature, which authenticates the FORS public key through the layered XMSS structure.\\
 \newline
-The \textbf{verification} process begins with three key inputs: the original message (\texttt{M}), the signature (\texttt{SIG}), and the signer's public key (\texttt{PK}). The signature consists of three components: the randomizer (R\texttt{text}), the FORS signature, and the hypertree signature. The public key includes \texttt{PK.seed} (a public seed) and \texttt{PK.root} (the root of the top-layer XMSS tree), which are essential for the verification process.\\
+The \textbf{verification} process starts with three key inputs: the original message (\texttt{M}), the signature (\texttt{SIG}), and the signer's public key (\texttt{PK}). The signature consists of three components: the randomizer (R\texttt{text}), the FORS signature, and the hypertree signature. The public key includes \texttt{PK.seed} (a public seed) and \texttt{PK.root} (the root of the top-layer XMSS tree), which are essential for the verification process.\\
 The verifier starts by recomputing the message digest using the same process that the signer used during the signing process. This involves hashing the message \texttt{M} together with the randomizer \texttt{R}, \texttt{PK.seed}, and \texttt{PK.root} using the \texttt{Hmsg} function. The resulting digest should match the one used by the signer to generate the signature. If the digest does not match, the signature is immediately invalid.\\
 The recomputed message digest is split into parts to determine the specific keys and trees used in the signing process. One portion of the digest is used to identify the FORS key that was used to sign part of the message. Another portion determines the index of the XMSS tree within the hypertree, and a third portion identifies the specific WOTS++ key within that XMSS tree. These indices are important for reconstructing the FORS public key and verifying the hypertree signature.\\
 Using the FORS signature and the relevant portion of the message digest, the verifier computes a candidate FORS public key using the \verb|fors_pkFromSig| function. This involves reconstructing the Merkle tree roots from the FORS signature and the message digest. The verifier then hashes these roots together to produce the candidate FORS public key. This step ensures that the FORS signature corresponds to the correct FORS key and that the message digest was signed properly.\\
 The candidate FORS public key is then verified using the hypertree signature. The hypertree signature consists of a sequence of XMSS signatures, starting from the bottom layer of the hypertree (which signs the FORS public key) and moving up to the top layer (which signs the XMSS public key of the layer below). The verifier uses the \verb|ht_verify| function to check each XMSS signature in the sequence. For each layer, the verifier reconstructs the corresponding XMSS public key using the \verb|xmss_pkFromSig| function and compares it to the expected value. This process continues until the top layer is reached.\\
-At the top layer of the hypertree, the verifier compares the computed XMSS public key to the \texttt{PK.root} from the signer's public key. If the two values match, the signature is considered valid. This confirms that the signature was generated using the signer's private key and that the message has not been altered. If the computed public key does not match \texttt{PK.root}, the signature is invalid, indicating either tampering with the message or an incorrect signature.\\
+At the top layer of the hypertree, the verifier compares the computed XMSS public key to the \texttt{PK.root} from the signer's public key. If the two values match, the signature is considered valid. This confirms that the signature was generated using the signer's private key and that the message has not been altered. If the computed public key does not match \texttt{PK.root}, the signature is invalid, indicating either tampering with the message or an incorrect signature. \cite{national-institute-of-standards-and-technology-2024}\\
 \newline
 SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers enhanced security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
 \\
@@ -126,7 +124,7 @@ After the Python protoype is confirmed to be working, we implement the algorithm
 With this approach, we can always make sure the C implementation is working by comparing it with the Python protoype.
 For both implementations, we choose to use one dedicated file per chapter in the standard specification, so the code mimicks the overall structure of the specification paper.
 % FIXME maybe we cant cite the NIST github repo properly instead of only providing a footnote with a link
-Both implementations are tested with the official test vectors provided by the NIST on their official GitHub page \footnote{https://github.com/usnistgov/ACVP-Server}.
+Both implementations are tested with the official test vectors provided by the NIST on their official GitHub page \cite{usnistgov-2024}.
 
 
 \subsection{Python}
@@ -173,7 +171,7 @@ In addition, we replace header include guards with the simple macro \texttt{\#pr
 
 %%%% 8. BILBIOGRAPHY %%%%
 \bibliographystyle{alpha}
-\bibliography{abbrev3,crypto,biblio}
+\bibliography{biblio}
 %%%% NOTES
 % - Download abbrev3.bib and crypto.bib from https://cryptobib.di.ens.fr/
 % - Use bilbio.bib for additional references not in the cryptobib database.

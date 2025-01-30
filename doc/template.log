@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (MiKTeX 22.7) (preloaded format=pdflatex 2022.7.28)  29 JAN 2025 23:58
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (MiKTeX 22.7) (preloaded format=pdflatex 2022.7.28)  30 JAN 2025 18:21
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -782,7 +782,7 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <9> on input line 42.
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 5
-3.
+1.
 
 (Z:\Programme\Miktex\tex/latex/lm\ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -793,12 +793,12 @@ IACR@TITLE: Stateless Hash-Based Digital Signature Standard
 [1
 
 {C:/Users/helli/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}]
-Underfull \hbox (badness 10000) in paragraph at lines 74--79
+Underfull \hbox (badness 10000) in paragraph at lines 72--77
 
  []
 
 
-Overfull \hbox (4.5167pt too wide) in paragraph at lines 85--118
+Overfull \hbox (4.5167pt too wide) in paragraph at lines 83--116
 \T1/lmr/m/n/10 (-20) The key gen-er-a-tion al-go-rithm ([][]\T1/lmtt/m/n/10 slh
 _keygen_internal[]\T1/lmr/m/n/10 (-20) ) takes \T1/lmtt/m/n/10 SK.seed\T1/lmr/m
 /n/10 (-20) , \T1/lmtt/m/n/10 SK.prf\T1/lmr/m/n/10 (-20) , and \T1/lmtt/m/n/10 
@@ -806,22 +806,22 @@ PK.seed
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 85--118
+Underfull \hbox (badness 10000) in paragraph at lines 83--116
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 85--118
+Underfull \hbox (badness 10000) in paragraph at lines 83--116
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 85--118
+Underfull \hbox (badness 10000) in paragraph at lines 83--116
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 85--118
+Underfull \hbox (badness 10000) in paragraph at lines 83--116
 
  []
 
@@ -839,13 +839,13 @@ Package rerunfilecheck Info: File `template.out' has not changed.
 (rerunfilecheck)             Checksum: DFE64A6FA2F2426E4981DBEE61F8C6CA;815.
  ) 
 Here is how much of TeX's memory you used:
- 15913 strings out of 478338
- 254914 string characters out of 2848425
- 727108 words of memory out of 3000000
- 33853 multiletter control sequences out of 15000+600000
- 559733 words of font info for 173 fonts, out of 8000000 for 9000
+ 15896 strings out of 478338
+ 254817 string characters out of 2848425
+ 727550 words of memory out of 3000000
+ 33849 multiletter control sequences out of 15000+600000
+ 550269 words of font info for 164 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,11n,93p,1007b,633s stack positions out of 10000i,1000n,20000p,200000b,80000s
+ 75i,11n,93p,1007b,628s stack positions out of 10000i,1000n,20000p,200000b,80000s
 {Z:/Programme/Miktex/fonts/enc/dvips/lm/lm-rm.enc}{Z:/Programme/Miktex/fonts/
 enc/dvips/lm/lm-mathsy.enc}{Z:/Programme/Miktex/fonts/enc/dvips/lm/lm-mathit.en
 c}{Z:/Programme/Miktex/fonts/enc/dvips/lm/lm-ec.enc}{Z:/Programme/Miktex/fonts/
@@ -859,9 +859,9 @@ type1/public/lm/lmr9.pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmssbx10.pf
 b><Z:/Programme/Miktex/fonts/type1/public/lm/lmsy10.pfb><Z:/Programme/Miktex/fo
 nts/type1/public/lm/lmsy7.pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmtt10
 .pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmtt9.pfb>
-Output written on template.pdf (5 pages, 328409 bytes).
+Output written on template.pdf (5 pages, 321591 bytes).
 PDF statistics:
- 156 PDF objects out of 1000 (max. 8388607)
- 17 named destinations out of 1000 (max. 500000)
- 54325 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 151 PDF objects out of 1000 (max. 8388607)
+ 19 named destinations out of 1000 (max. 500000)
+ 48181 words of extra memory for PDF output out of 51595 (max. 10000000)
 

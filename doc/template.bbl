@@ -1,0 +1,12 @@
+\begin{thebibliography}{oST24}
+
+\bibitem[oST24]{national-institute-of-standards-and-technology-2024}
+National~Institute of~Standards and Technology.
+\newblock {Stateless Hash-Based Digital Signature Standard}.
+\newblock Technical Report NIST.FIPS.205, 8 2024.
+
+\bibitem[usn24]{usnistgov-2024}
+usnistgov.
+\newblock {ACVP-Server, https://github.com/usnistgov/ACVP-Server}, 11 2024.
+
+\end{thebibliography}
