@@ -114,6 +114,16 @@ SLH-DSA is especially useful for modern applications where lightweight and scala
 \\
 This algorithm is a key step toward creating secure, efficient, and future-proof digital systems, making it a compelling choice for developers and security professionals seeking innovative cryptographic solutions.
 
+% FIXME put this in the right place
+% FIXME check if this is correct
+\subsection{Parameter Sets}
+
+SLH-DSA comes with different parameter sets that govern different aspects of the algorithm, including bit security and signature length.
+Parameter sets are divided into three security categories, that are indicated by the parameter \texttt{n}, which determines the length of a hash output in bytes, so 16, 24 and 32 bytes representing 128, 192 and 256 bits security, respectively.
+In addition, each security category has two different parameter sets each, suffixed by the letters \texttt{f} or \texttt{s}, which stand for \texttt{"fast"} and \texttt{"small"}.
+These achieve a tradeoff between program execution time and storage space: the \texttt{"fast"} option comes with a shorter execution time but larger signatures, whereas the \texttt{"small"} option outputs significantly smaller signatures at higher computing cost.
+The \texttt{"small"} set achives shorter signatures by using a smaller hypertree (parameter \texttt{d}) and fewer FORS trees (parameter \texttt{k}), whereas the \texttt{"fast"} implementation comes with shorter authentication paths (parameters \texttt{h'} and \texttt{k}), saving processing time.
+
 
 \section{Implementing the Algorithm}
 
@@ -123,7 +133,8 @@ Second, the whole signature algorithm can be implemented using only the Python s
 After the Python protoype is confirmed to be working, we implement the algorithm again in the programming language C, which offers vastly faster execution times compared to Python.
 With this approach, we can always make sure the C implementation is working by comparing it with the Python protoype.
 For both implementations, we choose to use one dedicated file per chapter in the standard specification, so the code mimicks the overall structure of the specification paper.
-% FIXME maybe we cant cite the NIST github repo properly instead of only providing a footnote with a link
+Note that only the parameter sets using SHAKE are implemented.
+% FIXME maybe we can cite the NIST github repo properly instead of only providing a footnote with a link
 Both implementations are tested with the official test vectors provided by the NIST on their official GitHub page \cite{usnistgov-2024}.
 
 
@@ -160,13 +171,31 @@ Furthermore, we do not use the \texttt{malloc()} to avoid problems such as memor
 Ceiling and floor division is implemented in the same way as the Python protoype, since the math library of C returns values of data type \texttt{double} when calling \texttt{ceil()} or \texttt{floor()}, which need to be converted back to an integer type.
 While this is generally possible, the larger parameter sets, namely \texttt{SLH-DSA-SHAKE-192s} and \texttt{SLH-DSA-SHAKE-256s}, produce values that are 64 bit in size, which causes floating point exeptions when trying to cast from a double to a 64 bit integer.
 \\
+To further optimize performance, we use \texttt{x \& 1 == 0} instead of \texttt{x \% 2 == 0} to check if a given number is even.
+Similarly, we place multiplications and divisions by the power of 2 with bit shifts, so $x * 2^y$ is implemented as \texttt{x << y}, whereas $x / 2^y$ becomes \texttt{x >> y}.
+\\
 The pseudo-random hash functions are first implemented using the \texttt{libgcrypt} library, which is available on many Linux platforms.
 In a second iteration, we replace \texttt{libgcrypt} with the \texttt{kcp/optimized1600AVX512} implementation, which is part of the supercop cryptography benchmark system, for the pseudo-random functions.
+\texttt{kcp/optimized1600AVX512} is optimized for Intel TigerLake processors, which should provide a performce boost when executing the code on such a platform.
 Random numbers are generated using the cross-platform \texttt{sodium} library.
 \\
 While not impacting performance, we also take measures to modernize the C codebase.
 For instance, we use the datatypes defined in \texttt{stdint.h}, so \texttt{unsigned char} becomes \texttt{uint8\_t}, \texttt{unsigned int} becomes \texttt{uint32\_t} and so on.
 In addition, we replace header include guards with the simple macro \texttt{\#pragma once}, which achives the same effect without having to make our own definitions.
+
+
+\subsection{Performance}
+
+As mentioned above, we replaced the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHAKE256 in hopes of increasing performance.
+In this section, we run some performance tests using both libraries to compare the two.
+To measure performance, we use the GNU time program \footnote{https://www.gnu.org/software/time/} and the binary is compiled with the same compiler options, mainly \texttt{-O3} and \texttt{-march=skylake-avx512}.
+For all tests, the message to sign and the context string stay the same.
+We first generate a random keypair, then we sign the message directly and validate the signature with the public key.
+Next, we hash the message with all approved hash messages listed in the specification (SHA-256, SHA-512, SHAKE128 and SHAKE256), sign the resulting hash and validate it.
+This process gets repeated for all implemented parameter sets 100 times to obtain a valid average time.
+\\
+When using \texttt{libgcrypt}, we measure an average execution time of 24.31 seconds.
+With \texttt{kcp/optimized1600AVX512}, the average execution time is only 17.38 seconds, roughly a 39.8 \% performance increase.
 
 
 %%%% 8. BILBIOGRAPHY %%%%

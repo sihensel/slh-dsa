@@ -18,6 +18,7 @@ uint32_t ascii_to_hex(char c)
 int main(void)
 {
     Parameters prm;
+    /*
     setup_parameter_set(&prm, "SLH-DSA-SHAKE-128f");
 
     // uint8_t sk_seed[prm.n];
@@ -76,8 +77,8 @@ int main(void)
         printf("VALID\n");
     else
         printf("INVALID\n");
+    */
 
-    /*
     // Our own tests
     char *parameter_sets[6] = {
         "SLH-DSA-SHAKE-128f",
@@ -94,9 +95,7 @@ int main(void)
         "SHAKE256"
     };
 
-    printf("Running all tests...\n");
     for (uint32_t i = 0; i < 6; i++) {
-        printf("\nParameter Set %s\n", parameter_sets[i]);
         setup_parameter_set(&prm, parameter_sets[i]);
 
         uint8_t sk_seed[prm.n];
@@ -122,22 +121,10 @@ int main(void)
         // generate keys
         slh_keygen(&prm, sk_seed, sk_prf, pk_seed, SK, PK);
 
-        for (uint32_t i = 0; i < 4 * prm.n; i++) {
-            printf("%x02", SK[i]);
-        }
-        printf("\n");
-        for (uint32_t i = 0; i < 2 * prm.n; i++) {
-            printf("%x02", PK[i]);
-        }
-        printf("\n");
-
         // test signing M
-        printf("Signing M\t\t");
         slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, SK, SIG, true);
 
         bool result = slh_verify(&prm, M, sizeof M, SIG, sizeof SIG, ctx, sizeof ctx, PK);
-        if (result == true) printf("Signature valid\n");
-        else printf("Signature invalid\n");
 
         for (uint32_t j = 0; j < 4; j++) {
             memset(M, 0, sizeof M);
@@ -145,15 +132,10 @@ int main(void)
             memset(SIG, 0, sizeof SIG);
 
             // test signing hash of M
-            printf("Signing %s(M)\t", hash_functions[j]);
             hash_slh_sign(&prm, M, sizeof M, ctx, sizeof ctx, hash_functions[j], SK, SIG, true);
             result = hash_slh_verify(&prm, M, sizeof M, SIG, sizeof SIG, ctx, sizeof ctx, hash_functions[j], PK);
-
-            if (result == true) printf("Signature valid\n");
-            else printf("Signature invalid\n");
         }
     }
-    */
 
     return EXIT_SUCCESS;
 }
