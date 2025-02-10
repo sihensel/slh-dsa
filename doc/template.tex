@@ -30,7 +30,7 @@
 
 %%%% 4. TITLE %%%%
 \title{Stateless Hash-Based Digital Signature Standard}
-\subtitle{Dokumentation}
+\subtitle{Documentation}
 %%%% NOTES:
 % - If the title is too long, or includes special macro, please
 %   provide a "running title" as optional argument: \title[Short]{Long}
@@ -76,18 +76,18 @@ At its core, SLH-DSA employs cryptographic hash functions to generate secure, ve
 The Algorithm can be divided into 4 Steps:
 \begin{enumerate}
 	\item \textbf{Key Generation} of private and public key
-	\item \textbf{Key Distribution}  of public key
+	\item \textbf{Key Distribution} of public key
 	\item \textbf{Signature Generation} by sender
 	\item \textbf{Signature Verification} by receiver
 \end{enumerate}
-During the \textbf{Key Generation} both a private key and a public key are created. The private key consists of two main components:
+During the \textbf{Key Generation}, both a private key and a public key are created. The private key consists of two main components:
 the \texttt{SK.seed} which is a random seed used to generate all the secret values for the WOTS+ (Winternitz One-Time Signature Plus) and FORS (Forest of Random Subsets) keys and the \texttt{SK.prf}, a pseudorandom function (PRF) key used to generate a randomization value for the message hashing during signature generation.
 Additionally, the private key includes a copy of the public key components (PK.seed and PK.root) for use during signature generation and verification.
 \\
-The public key consists of the \texttt{PK.seed} which is a public seed used to provide domain separation between different SLH-DSA key pairs. It is also used in many hash function calls. The key also konsists of the\texttt{PK.root} which is the root of the top-layer XMSS (eXtended Merkle Signature Scheme) tree, which serves as the public key of the hypertree.
+The public key consists of the \texttt{PK.seed} which is a public seed used to provide domain separation between different SLH-DSA key pairs. It is also used in many hash function calls. The key also consists of the \texttt{PK.root} which is the root of the top-layer XMSS (eXtended Merkle Signature Scheme) tree, which also serves as the public key of the SLH-DSA hypertree.
 \\
 The key generation algorithm (\verb|slh_keygen_internal|) takes \texttt{SK.seed}, \texttt{SK.prf}, and \texttt{PK.seed} as inputs.
-It computes the root of the top-layer XMSS tree (\texttt{PK.root}) using the \verb|xmss/_node| function, which recursively constructs the Merkle tree from the WOTS++ public keys.
+It computes the root of the top-layer XMSS tree (\texttt{PK.root}) using the \verb|xmss/_node| function, which recursively constructs the Merkle tree from the WOTS+ public keys.
 The private key is then formed by bundling \texttt{SK.seed}, \texttt{SK.prf}, \texttt{PK.seed}, and \texttt{PK.root}.
 The public key is formed by bundling \texttt{PK.seed} and \texttt{PK.root}.
 \\
@@ -96,18 +96,18 @@ Both \texttt{SK.seed} and \texttt{SK.prf} must be generated using an approved ra
 \textbf{Key Distribution} in SLH-DSA follows standard cryptographic practices, with a focus on securely sharing public keys while keeping private keys confidential. This ensures that the system remains secure and resistant to attacks, even in a post-quantum setting. Since the public key is not sensitive, it can be distributed freely. Common methods for distributing public keys include Public Key Infrastructure (the public key can be shared via digital certificates issued by a trusted Certificate Authority (CA)), Direct Sharing or Key Servers.\\
 \newline
 The \textbf{signing} process begins with the message (\texttt{M}) that needs to be signed, along with the signer's private key (\texttt{SK}). 
-To ensure that each signature is unique, even if the same message is signed multiple times, a randomizer (\texttt{R}) is generated. This is done using the \texttt{PRFmsg} function, which takes \texttt{SK.prf} and the message \texttt{M} as inputs. The randomizer is then combined with the message, \texttt{PK.seed}, and \texttt{PK.root} using the \texttt{} function to produce a message digest. This digest serves as the basis for the rest of the signing process.\\
-The message digest is divided into parts to determine how the signature will be constructed. One portion of the digest is used to select a FORS key from the large set of FORS key pairs in the SLH-DSA key structure. Another portion is used to determine the index of the XMSS tree and the specific WOTS+ key within that tree. This ensures that the signature is tied to a specific FORS key and XMSS tree.\\
-Once the FORS key is selected, it is used to sign part of the message digest. This involves generating a FORS signature using the \verb|fors_sign| function. The FORS signature includes secret values from the FORS private key, along with their corresponding authentication paths in the FORS Merkle trees. These authentication paths allow the verifier to reconstruct the FORS public key during verification.\\
-After the FORS signature is created, the corresponding FORS public key is computed. This public key is then signed using the hypertree structure, which consists of multiple layers of XMSS trees. The \verb|ht_sign| function generates a hypertree signature by creating a sequence of XMSS signatures. The process starts at the bottom layer of the hypertree, where the FORS public key is signed, and moves up through each layer until the top layer is reached. Each layer signs the public key of the layer below it, ultimately producing a chain of signatures that authenticate the FORS public key.\\
+To ensure that each signature is unique, even if the same message is signed multiple times, a randomizer (\texttt{R}) is generated. This is done using the \texttt{PRFmsg} function, which takes \texttt{SK.prf}, a previously generated random value \texttt{addrand}, and the message \texttt{M} as inputs. For the deterministic variant of the algorithm, \texttt{addrand} is replaced with \texttt{PK.seed}. The randomizer is then combined with the message, \texttt{PK.seed}, and \texttt{PK.root} using the \texttt{Hmsg} function to produce a message digest. This digest serves as the basis for the rest of the signing process.\\
+The message digest is divided into different parts to determine how the signature will be constructed. One portion of the digest is used to select a FORS key from the large set of FORS key pairs in the SLH-DSA key structure. Another portion is used to determine the leaf index within each FORS tree. This ensures that the signature is tied to a specific FORS key.\\
+Once the FORS key is selected, it is used to sign the first part of the message digest. This involves generating a FORS signature using the \verb|fors_sign| function. The FORS signature includes secret values from the FORS private key, along with their corresponding authentication paths in the FORS Merkle trees. These authentication paths allow the verifier to reconstruct the FORS public key during verification.\\
+After the FORS signature is created, the corresponding FORS public key is computed. This public key is then signed using the hypertree structure, which consists of multiple layers of XMSS trees. The \verb|ht_sign| function generates a hypertree signature by creating a sequence of XMSS signatures. The process starts at the bottom layer of the hypertree, where the FORS public key is signed, and moves up through each layer until the top layer is reached. Each layer signs the public key of the layer below it, ultimately producing a chain of signatures that authenticate the FORS public key. The public key of each layer gets signed with a WOTS+ signature, before the next layer is processed.\\
 The final SLH-DSA signature is composed of three main components:
 the randomizer (\texttt{R}), which ensures the uniqueness of the signature, the FORS signature, which signs part of the message digest and the hypertree signature, which authenticates the FORS public key through the layered XMSS structure.\\
 \newline
-The \textbf{verification} process starts with three key inputs: the original message (\texttt{M}), the signature (\texttt{SIG}), and the signer's public key (\texttt{PK}). The signature consists of three components: the randomizer (R\texttt{text}), the FORS signature, and the hypertree signature. The public key includes \texttt{PK.seed} (a public seed) and \texttt{PK.root} (the root of the top-layer XMSS tree), which are essential for the verification process.\\
-The verifier starts by recomputing the message digest using the same process that the signer used during the signing process. This involves hashing the message \texttt{M} together with the randomizer \texttt{R}, \texttt{PK.seed}, and \texttt{PK.root} using the \texttt{Hmsg} function. The resulting digest should match the one used by the signer to generate the signature. If the digest does not match, the signature is immediately invalid.\\
-The recomputed message digest is split into parts to determine the specific keys and trees used in the signing process. One portion of the digest is used to identify the FORS key that was used to sign part of the message. Another portion determines the index of the XMSS tree within the hypertree, and a third portion identifies the specific WOTS++ key within that XMSS tree. These indices are important for reconstructing the FORS public key and verifying the hypertree signature.\\
+The \textbf{verification} process starts with three key inputs: the original message (\texttt{M}), the signature (\texttt{SIG}), and the signer's public key (\texttt{PK}). The signature consists of three components: the randomizer (\texttt{R}), the FORS signature, and the hypertree signature. The public key includes \texttt{PK.seed} (a public seed) and \texttt{PK.root} (the root of the top-layer XMSS tree), which are essential for the verification process.\\
+The verifier starts by recomputing the message digest using the same process that the signer used during the signing process, as described above. This involves hashing the message \texttt{M} together with the randomizer \texttt{R}, \texttt{PK.seed}, and \texttt{PK.root} using the \texttt{Hmsg} function. The resulting digest should match the one used by the signer to generate the signature. If the digest does not match, the signature is immediately invalid.\\
+The recomputed message digest is split into parts to determine the specific keys and trees used in the signing process. One portion of the digest is used to identify the FORS key that was used to sign part of the message. Another portion determines the leaf index of each tree in the FORS structure. These indices are important for reconstructing the FORS public key and verifying the hypertree signature.\\
 Using the FORS signature and the relevant portion of the message digest, the verifier computes a candidate FORS public key using the \verb|fors_pkFromSig| function. This involves reconstructing the Merkle tree roots from the FORS signature and the message digest. The verifier then hashes these roots together to produce the candidate FORS public key. This step ensures that the FORS signature corresponds to the correct FORS key and that the message digest was signed properly.\\
-The candidate FORS public key is then verified using the hypertree signature. The hypertree signature consists of a sequence of XMSS signatures, starting from the bottom layer of the hypertree (which signs the FORS public key) and moving up to the top layer (which signs the XMSS public key of the layer below). The verifier uses the \verb|ht_verify| function to check each XMSS signature in the sequence. For each layer, the verifier reconstructs the corresponding XMSS public key using the \verb|xmss_pkFromSig| function and compares it to the expected value. This process continues until the top layer is reached.\\
+The candidate FORS public key is then verified using the hypertree signature. The hypertree signature consists of a sequence of XMSS signatures, starting from the bottom layer of the hypertree (which signs the FORS public key) and moving up to the top layer (which signs the XMSS public key of the layer below). Again, each signature is singed by a WOTS+ signature chain. The verifier uses the \verb|ht_verify| function to check each XMSS signature in the sequence. For each layer, the verifier reconstructs the corresponding XMSS public key using the \verb|xmss_pkFromSig| function and compares it to the expected value. This process continues until the top layer is reached.\\
 At the top layer of the hypertree, the verifier compares the computed XMSS public key to the \texttt{PK.root} from the signer's public key. If the two values match, the signature is considered valid. This confirms that the signature was generated using the signer's private key and that the message has not been altered. If the computed public key does not match \texttt{PK.root}, the signature is invalid, indicating either tampering with the message or an incorrect signature. \cite{national-institute-of-standards-and-technology-2024}\\
 \newline
 SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers enhanced security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
@@ -119,7 +119,7 @@ This algorithm is a key step toward creating secure, efficient, and future-proof
 \subsection{Parameter Sets}
 
 SLH-DSA comes with different parameter sets that govern different aspects of the algorithm, including bit security and signature length.
-Parameter sets are divided into three security categories, that are indicated by the parameter \texttt{n}, which determines the length of a hash output in bytes, so 16, 24 and 32 bytes representing 128, 192 and 256 bits security, respectively.
+Parameter sets are divided into three security categories, indicated by the parameter \texttt{n}, which determines the length of a hash output in bytes, so 16, 24 and 32 bytes representing 128, 192 and 256 bit security, respectively.
 In addition, each security category has two different parameter sets each, suffixed by the letters \texttt{f} or \texttt{s}, which stand for \texttt{"fast"} and \texttt{"small"}.
 These achieve a tradeoff between program execution time and storage space: the \texttt{"fast"} option comes with a shorter execution time but larger signatures, whereas the \texttt{"small"} option outputs significantly smaller signatures at higher computing cost.
 The \texttt{"small"} set achives shorter signatures by using a smaller hypertree (parameter \texttt{d}) and fewer FORS trees (parameter \texttt{k}), whereas the \texttt{"fast"} implementation comes with shorter authentication paths (parameters \texttt{h'} and \texttt{k}), saving processing time.
@@ -128,11 +128,11 @@ The \texttt{"small"} set achives shorter signatures by using a smaller hypertree
 \section{Implementing the Algorithm}
 
 First, we implement a prototype of SLH-DSA in Python.
-This has numerous advantages: First, Python code is rather easy to run and debug since no compilation is needed.
+This has numerous advantages: First, Python code is rather easy to run and debug since no compilation is needed and Python's stacktraces are really detailed.
 Second, the whole signature algorithm can be implemented using only the Python standard library.
 After the Python protoype is confirmed to be working, we implement the algorithm again in the programming language C, which offers vastly faster execution times compared to Python.
-With this approach, we can always make sure the C implementation is working by comparing it with the Python protoype.
-For both implementations, we choose to use one dedicated file per chapter in the standard specification, so the code mimicks the overall structure of the specification paper.
+With this approach, we can always make sure the C implementation is working as intended by comparing it with the Python protoype.
+For both implementations, we choose to use one dedicated file per chapter in the standard specification, so the code follows the overall structure of the specification paper.
 Note that only the parameter sets using SHAKE are implemented.
 % FIXME maybe we can cite the NIST github repo properly instead of only providing a footnote with a link
 Both implementations are tested with the official test vectors provided by the NIST on their official GitHub page \cite{usnistgov-2024}.
@@ -141,13 +141,13 @@ Both implementations are tested with the official test vectors provided by the N
 \subsection{Python}
 
 The Python implementation is rather straightforward.
-We started with chapter 4 of the specification, which governs the pseudo-random functions and hash addresses.
-All functions regarding the hash address are grouped up in a class, all other functions use regular methods.
+We start with chapter 4 of the specification, which governs the pseudo-random functions and hash addresses.
+All functions regarding the hash address \texttt{ADRS} are grouped up in a class of the same name, all other functions use regular methods.
 The parameter sets are provided via a global variable that gets initialized at the beginning of the program.
 Altough global variables are considered bad practice in general, we deliberately take this approach as now the parameters do not have to be passed to every function call individually.
-In addition, the parameters never change during runtime, so we do not have to take race conditions or similar issues into account.
+In addition, the parameters never change during runtime and are treated as read-only, so we do not have to take race conditions or similar issues into account.
 \\
-The Python implemented always operates on \texttt{byte}-objects, the initial message, as well as the key values and the hash outputs are bytes.
+The Python implementation always operates on \texttt{byte}-objects: the initial message, as well as the key values and the hash outputs are bytes.
 All pseudo-random functions are implemented using Python's standard module \texttt{hashlib} to generate the various hashes.
 Furthermore, the \texttt{secrets} module is used to generate cryptographically secure random values during the key generation and for the non-deterministic variant of the algorithm.
 \\
@@ -160,42 +160,58 @@ For instance, $\lceil \frac{k * a}{8} \rceil$ becomes \texttt{(k * a + 7) // 8}.
 
 The C code now gets implemented after the Python protoype is finished and confirmed to be working.
 We take the same approach of using one code file per chapter, which in the context of C means one \texttt{.c} file accompanied by a \texttt{.h} file with the same name.
-Here, all parameters are stored in a struct, that gets initialized at the beginning of the program and whose address passed to each function call individually.
-Similarly, the address is now also a struct, since C does not support classes.
+Here, all parameters are stored in a struct, that gets initialized at the beginning of the program and is passed to each function call individually, so we no longer have to deal with a global variable.
+Similarly, the address \texttt{ADRS} is now also stored in a struct, since C does not support classes.
 \\
-The code operates on byte arrays, the message that gets signed, as well as the keys, the hash outputs and the signatures are stored in byte arrays.
-As such, every function that returns a byte value, has an additional input called \texttt{buffer}, which is a pointer to an array where the output values get copied to.
+The code operates on byte arrays, similar to Python's byte-objects: the message that gets signed, as well as the keys, the hash outputs and the signatures are stored in byte arrays.
+As such, every function that returns a byte value, has an additional input called \texttt{buffer}, which is a pointer to an array where the output values get copied to via the \texttt{memcpy()}-function.
 Great care has been taken to avoid any form of buffer overflows or overreads when doing so.
-Furthermore, we do not use the \texttt{malloc()} to avoid problems such as memory leaks when forgetting to call \texttt{free()} or segmentation faults when trying to access memory that has already been free'd.
+Furthermore, we intentionallt do not use \texttt{malloc()} or \texttt{calloc()} to avoid problems such as memory leaks when forgetting to call \texttt{free()} or segmentation faults when trying to access memory that has already been free'd.
 \\
 Ceiling and floor division is implemented in the same way as the Python protoype, since the math library of C returns values of data type \texttt{double} when calling \texttt{ceil()} or \texttt{floor()}, which need to be converted back to an integer type.
-While this is generally possible, the larger parameter sets, namely \texttt{SLH-DSA-SHAKE-192s} and \texttt{SLH-DSA-SHAKE-256s}, produce values that are 64 bit in size, which causes floating point exeptions when trying to cast from a double to a 64 bit integer.
+While this is generally possible, the larger parameter sets, namely \texttt{SLH-DSA-SHAKE-192s} and \texttt{SLH-DSA-SHAKE-256s}, operate on values that are 64 bit in size, which causes floating point exeptions when trying to cast from a 64 bit double to a 64 bit integer.
 \\
-To further optimize performance, we use \texttt{x \& 1 == 0} instead of \texttt{x \% 2 == 0} to check if a given number is even.
-Similarly, we place multiplications and divisions by the power of 2 with bit shifts, so $x * 2^y$ is implemented as \texttt{x << y}, whereas $x / 2^y$ becomes \texttt{x >> y}.
+To further optimize performance, we use \texttt{x \& 1 == 0} instead of \texttt{x \% 2 == 0} to check if a given number is even, as bit operations are always faster than division or multiplication.
+Similarly, we replace multiplications and divisions by the power of 2 with bit shifts, so $x * 2^y$ is implemented as \texttt{x << y}, whereas $x / 2^y$ becomes \texttt{x >> y}.
 \\
-The pseudo-random hash functions are first implemented using the \texttt{libgcrypt} library, which is available on many Linux platforms.
-In a second iteration, we replace \texttt{libgcrypt} with the \texttt{kcp/optimized1600AVX512} implementation, which is part of the supercop cryptography benchmark system, for the pseudo-random functions.
-\texttt{kcp/optimized1600AVX512} is optimized for Intel TigerLake processors, which should provide a performce boost when executing the code on such a platform.
+The pseudo-random hash functions are first implemented using the \texttt{libgcrypt} library, a cryptographic library readily available on most Linux systems.
+% FIXME cite SUPERCOP here
+In a second iteration, we replace SHA-256 from the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHA-256, which is part of the SUPERCOP cryptography benchmark system, to reduce the program's exeption time.
+\texttt{kcp/optimized1600AVX512} is optimized for processors that support the AVX512 instruction set, which includes our development machines, which should provide a performce boost when executing the code on these platforms.
 Random numbers are generated using the cross-platform \texttt{sodium} library.
 \\
 While not impacting performance, we also take measures to modernize the C codebase.
 For instance, we use the datatypes defined in \texttt{stdint.h}, so \texttt{unsigned char} becomes \texttt{uint8\_t}, \texttt{unsigned int} becomes \texttt{uint32\_t} and so on.
-In addition, we replace header include guards with the simple macro \texttt{\#pragma once}, which achives the same effect without having to make our own definitions.
+In addition, we replace header include guards with the simple macro \texttt{\#pragma once}, which achives the same effect without having to think about our own definitions.
 
 
 \subsection{Performance}
 
-As mentioned above, we replaced the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHAKE256 in hopes of increasing performance.
+As mentioned above, in a later development iteration, we replace the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHAKE256 in hopes of increasing performance.
 In this section, we run some performance tests using both libraries to compare the two.
-To measure performance, we use the GNU time program \footnote{https://www.gnu.org/software/time/} and the binary is compiled with the same compiler options, mainly \texttt{-O3} and \texttt{-march=skylake-avx512}.
+To measure performance, we use the GNU time program \footnote{https://www.gnu.org/software/time/}.
+The SLH-DSA code is always compiled with the same compiler options, mainly \texttt{-O3} and \texttt{-march=skylake-avx512}.
 For all tests, the message to sign and the context string stay the same.
 We first generate a random keypair, then we sign the message directly and validate the signature with the public key.
-Next, we hash the message with all approved hash messages listed in the specification (SHA-256, SHA-512, SHAKE128 and SHAKE256), sign the resulting hash and validate it.
+Next, we hash the message with all approved hash messages listed in the specification (SHA-256, SHA-512, SHAKE128 and SHAKE256), sign the resulting hash and later validate that signature.
 This process gets repeated for all implemented parameter sets 100 times to obtain a valid average time.
 \\
 When using \texttt{libgcrypt}, we measure an average execution time of 24.31 seconds.
 With \texttt{kcp/optimized1600AVX512}, the average execution time is only 17.38 seconds, roughly a 39.8 \% performance increase.
+These results show that the implementation of the hash function poses a heavy bottleneck on the programs runtime.
+A lot of execution time, and by extension, power consumption, can be saved by choosing an implementation of SHAKE256 that is properly optimized for the target platform where the algorithm should be run.
+
+\section{Conclusion}
+
+This last section details our learnings from implementing SLH-DSA.
+First it is always important to properly read the documentation, as many errors or inconsistencies can be avoided when staying close to the source.
+Next, it is really helpful to test individual components of the code, before implementing the next module.
+This avoids subsequent errors and makes debugging easier, as faults in a component that gets called very late during runtime can be hard to debug and find.
+In that vein, it is also really helpful to compare your own code base with other, already existing implementations.
+This helped us test and debug individual components, as well as alternative solutions to coding problems.
+\\
+All in all, this project really helped to provide a perspective on how cryptographic algorithms are implemented, how they work and the common pitfalls that can happen during development.
+The coding practice also helped solidify our knowledge in both Python and C regarding best practices and coding techniques.
 
 
 %%%% 8. BILBIOGRAPHY %%%%

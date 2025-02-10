@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  31 JAN 2025 11:53
+This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  10 FEB 2025 10:45
  system commands enabled.
 **template.tex
 (./template.tex
@@ -901,18 +901,20 @@ Underfull \hbox (badness 10000) in paragraph at lines 83--116
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [3]
-[4] [5]
-Overfull \hbox (5.96236pt too wide) in paragraph at lines 189--199
-\T1/lmr/m/n/10 As men-tioned above, we re-placed the \T1/lmtt/m/n/10 libgcrypt 
-\T1/lmr/m/n/10 li-brary with the \T1/lmtt/m/n/10 kcp/optimized1600AVX512
- []
+Underfull \vbox (badness 4403) has occurred while \output is active []
 
-(./template.bbl) (/usr/share/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
+ [4]
+[5] (/usr/share/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
 (/usr/share/texmf-dist/tex/generic/stringenc/se-utf32be.def
 File: se-utf32be.def 2019/11/29 v1.12 stringenc: UTF-32BE
 ) [6]
+(./template.bbl) [7]
+
+LaTeX Warning: Hook 'shipout/lastpage' executed on wrong page (6 not 7).
+               Rerun to correct this.
+
 (./template.aux)
  ***********
 LaTeX2e <2023-11-01> patch level 1
@@ -925,19 +927,19 @@ Package rerunfilecheck Warning: File `template.out' has changed.
 (rerunfilecheck)                or use package `bookmark'.
 
 Package rerunfilecheck Info: Checksums for `template.out':
-(rerunfilecheck)             Before: D6382D87EA71B9D063F0BFCDF96B9203;945
-(rerunfilecheck)             After:  4DBD8DFC4910E0B2927EC025EAAB2B13;1057.
+(rerunfilecheck)             Before: 4DBD8DFC4910E0B2927EC025EAAB2B13;1057
+(rerunfilecheck)             After:  1E37E49E708DFFB41AEB2CE5D320834E;1150.
 )
 
 Here is how much of LuaTeX's memory you used:
- 15982 strings out of 476447
+ 15985 strings out of 476447
  156265,1977958 words of node,token memory allocated
  598 words of node memory still in use:
    8 hlist, 2 vlist, 2 rule, 1 local_par, 5 glue, 5 kern, 1 penalty, 3 glyph, 9 
 attribute, 59 glue_spec, 9 attribute_list, 1 write nodes
-   avail lists: 1:4,2:492,3:169,4:116,5:757,6:57,7:15214,8:21,9:348,10:24,11:127
-6,12:1
- 37667 multiletter control sequences out of 65536+600000
+   avail lists: 1:5,2:506,3:170,4:115,5:767,6:54,7:15381,8:21,9:348,10:17,11:128
+9,12:1
+ 37668 multiletter control sequences out of 65536+600000
  72 fonts using 4817983 bytes
  79i,11n,91p,1004b,532s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf-dist/fonts
@@ -954,10 +956,10 @@ lic/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></us
 r/share/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf-dist/fonts/
 type1/public/lm/lmtt10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt9.pf
 b>
-Output written on template.pdf (6 pages, 319276 bytes).
+Output written on template.pdf (7 pages, 322407 bytes).
 
-PDF statistics: 154 PDF objects out of 1000 (max. 8388607)
- 49 compressed objects within 1 object stream
- 23 named destinations out of 1000 (max. 131072)
- 62 words of extra memory for PDF output out of 10000 (max. 100000000)
+PDF statistics: 162 PDF objects out of 1000 (max. 8388607)
+ 51 compressed objects within 1 object stream
+ 25 named destinations out of 1000 (max. 131072)
+ 70 words of extra memory for PDF output out of 10000 (max. 100000000)
 
