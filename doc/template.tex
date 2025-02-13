@@ -153,7 +153,7 @@ Furthermore, the \texttt{secrets} module is used to generate cryptographically s
 \\
 The rest of the algorithm pretty much follows the pseudocode provided in the specification.
 In cases where floor division is decessary, we use Python's floor operator \texttt{//}, if the ceiling of a value has to be calculated, we add the $denominator - 1$ to the numerator.
-For instance, $\lceil \frac{k * a}{8} \rceil$ becomes \texttt{(k * a + 7) // 8}.
+For instance, $\lceil \frac{k * a}{8} \rceil$ is implemented as \texttt{(k * a + 7) // 8}.
 
 
 \subsection{C}
@@ -189,15 +189,52 @@ In addition, we replace header include guards with the simple macro \texttt{\#pr
 
 As mentioned above, in a later development iteration, we replace the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHAKE256 in hopes of increasing performance.
 In this section, we run some performance tests using both libraries to compare the two.
-To measure performance, we use the GNU time program \footnote{https://www.gnu.org/software/time/}.
+To measure performance, we use the perf program \footnote{https://perfwiki.github.io/main/}, that is part of the Linux kernel to measure CPU cycles.
 The SLH-DSA code is always compiled with the same compiler options, mainly \texttt{-O3} and \texttt{-march=skylake-avx512}.
-For all tests, the message to sign and the context string stay the same.
-We first generate a random keypair, then we sign the message directly and validate the signature with the public key.
-Next, we hash the message with all approved hash messages listed in the specification (SHA-256, SHA-512, SHAKE128 and SHAKE256), sign the resulting hash and later validate that signature.
-This process gets repeated for all implemented parameter sets 100 times to obtain a valid average time.
 \\
-When using \texttt{libgcrypt}, we measure an average execution time of 24.31 seconds.
-With \texttt{kcp/optimized1600AVX512}, the average execution time is only 17.38 seconds, roughly a 39.8 \% performance increase.
+For our tests, we generate a keypair, sign the message with the private key and validate the resulting signature with the public key using all 6 implemented parameter sets.
+This also explains the high clock cycle count, as each iteration consists of 6 key generations, 6 signature generations and 6 signature verifications.
+This process gets repeated 100 times, to obtain a suffieciently accurate performance average.
+For all tests, the message to sign and the context string stay the same, while the keys are randomly generated.
+The results can be see in Table \ref{tab:cycles}, with the \texttt{kcp/optimized1600AVX512} implementation achieving a performance increase of 32.95\%.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{ l | r }
+    \textbf{SHAKE256 Implementation} & \textbf{Avg. CPU Cycles per Test} \\
+    \hline
+    \texttt{libgcrypt} & $75,011,809,215$ \\
+    \texttt{kcp/optimized1600AVX512} & $50,297,966,938$ \\
+    \hline
+    \textbf{Performance increase} & $32.95\%$
+\end{tabular}
+     \caption{\label{tab:cycles}Average CPU clock cycles per test run.}
+\end{table}
+
+A vast majority of the algorithm's runtime is used on hashing, as can be seen in Table \ref{tab:perf}, which shows an excerpt of select functions and how many CPU cycles they take to complete during one test run.
+The functions names for SHAKE256, prefixed with \texttt{KeccakP1600...} stem from the \texttt{kcp/optimized1600AVX512} implementation, while the other functions names follow the pseudocode from the standard and are implemented by us.
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{ r | l }
+    \textbf{\% of clock cycles} & \textbf{Function name} \\
+    \hline
+    85.93\% & \texttt{KeccakP1600\_Permute\_24rounds} \\
+     6.30\% & \texttt{KeccakP1600\_AddBytes} \\
+     2.41\% & \texttt{KeccakWidth1600\_Sponge} \\
+     2.03\% & \texttt{F} \\
+     0.34\% & \texttt{PRF} \\
+     0.32\% & \texttt{fors\_node} \\
+     0.22\% & \texttt{KeccakP1600\_Initialize} \\
+     0.22\% & \texttt{wots\_pkGen} \\
+     0.14\% & \texttt{H} \\
+     0.14\% & \texttt{KeccakP1600\_ExtractBytes} \\
+     0.02\% & \texttt{xmss\_node} \\
+     0.01\% & \texttt{KeccakF1600\_FastLoop\_Absorb}
+\end{tabular}
+     \caption{\label{tab:perf}Percentage of all CPU cycles by function.}
+\end{table}
+
 These results show that the implementation of the hash function poses a heavy bottleneck on the programs runtime.
 A lot of execution time, and by extension, power consumption, can be saved by choosing an implementation of SHAKE256 that is properly optimized for the target platform where the algorithm should be run.
 
