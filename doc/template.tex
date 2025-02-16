@@ -29,7 +29,7 @@
 
 
 %%%% 4. TITLE %%%%
-\title{Stateless Hash-Based Digital Signature Standard}
+\title{Stateless Hash-Based Digital Signature Algorithm}
 \subtitle{Documentation}
 %%%% NOTES:
 % - If the title is too long, or includes special macro, please
@@ -42,7 +42,7 @@
 
 
 %%%% 5. KEYWORDS %%%%
-\keywords{Something \and Something else}
+\keywords{SLH-DSA \and Post-Quantum Cryptography}
 
 
 %%%% 6. ABSTRACT %%%%
@@ -54,24 +54,34 @@
 %%%% 7. PAPER CONTENT %%%%
 \section{Introduction}
 
-In the realm of modern cryptography, ensuring data integrity and authenticity is a cornerstone of secure communication and digital transactions. Digital Signature Algorithms (DSAs) are pivotal in this context, enabling entities to validate the provenance and integrity of data without the need for direct interaction. Among the diverse array of DSAs, the Stateless Hash-based Digital Signature Algorithm (Stateless Hash-DSA) emerges as a robust and efficient cryptographic solution tailored for secure, lightweight, and future-proof applications.
+Data integrity and authenticity play a vital role in modern cryptography to enable secure communication and digital transactions.
+Digital Signature Algorithms (DSAs) enable users to validate the origin and integrity of data without the need for direct interaction.
+The Stateless Hash-based Digital Signature Algorithm (SLH-DSA) is a new DSA that aims to offer a robust and efficient cryptographic solution to ensure data integrity and authenticity, usable by secure, lightweight, and future-proof applications.
+SLH-DSA is advanced algorithm designed to leverage the inherent strength of hash functions while eliminating challenges associated with stateful signature schemes, such as the eXtended Merkle Signature Scheme (XMSS).
+As such, SLH-DSA is not vulnerable to errors that can occur with stateful algorithms, such as accidental state reuse.
+Furthermore, statelessness also reduces the overall complexity of the algorithm, as state management does not have to be taken into account anymore, which also allows for a greater deal of parallelization when running the algorithm.
 \\
-This project aims to explore and implement the Stateless Hash-DSA, an advanced algorithm designed to leverage the inherent strength of hash functions while addressing challenges associated with stateful signature schemes. Unlike traditional approaches that rely on maintaining and managing state information, Stateless Hash-DSA eliminates the complexities of state management, thereby reducing operational risks such as accidental state reuse—a common vulnerability in stateful systems.
-\\
-By implementing the Stateless Hash-DSA, this project contributes to the advancement of secure digital signature techniques suitable for environments where simplicity, efficiency, and resistance to quantum adversaries are crucial. The following documentation outlines the theoretical foundations, implementation details, and practical applications of the Stateless Hash-DSA.
+In this document, we describe the theoretical foundations and inner workings of SLH-DSA, our understanding of the algorithm, how we implement it in the programming languages Python and C and which challenges and solution we encountered doing so.
+By implementing SLH-DSA, this project contributes to the advancement of quantum-resistant cryptographic applications to provide efficient solution to end users.
 
 \section{Hash-based Cryptography}
 
-Stateless hash algorithms are cryptographic methods that leverage hash functions to ensure security while eliminating the need to maintain state information during operation. In traditional stateful algorithms, maintaining a record of past operations is essential to prevent vulnerabilities such as key or signature reuse. However, this reliance on state can introduce operational complexities and risks, particularly in distributed or constrained environments.
+Stateless hash algorithms are cryptographic methods that utilize hash functions to ensure security while eliminating the need to maintain state information during operation.
+In traditional stateful algorithms, maintaining a record of past operations is essential to prevent vulnerabilities such as key or signature reuse.
+However, this reliance on state introduces additional complexities to both the algorithm itself as well as respecitve implementations, particularly in distributed or constrained environments.
 \\
-By contrast, stateless hash algorithms operate without requiring a persistent state, relying solely on the cryptographic strength of hash functions to secure data. This design simplifies implementation, reduces the risk of errors associated with state management, and enhances resilience against attacks that exploit state inconsistencies. Stateless approaches are especially valuable in applications like digital signatures, where lightweight, efficient, and secure operations are critical.
+By contrast, stateless hash algorithms, as the name implies, operate without requiring a persistent state, and instead rely on the pseudorandomness of cryptographic hash functions to sign data.
+This approach simplifies the algorithm and implementations, as errors associated with state management as well as associated vulnerabilities are of no concern.
+Stateless approaches are especially valuable in applications like digital signatures, where lightweight, efficient, and secure operations are critical.
 \\
-Stateless hash algorithms are also well-suited for post-quantum cryptography, leveraging the inherent robustness of hash functions against quantum adversaries, ensuring their applicability in future cryptographic systems.
+Since current, modern hash functions are inherently quite quantum-resistant, assuming a sufficiently large state, signature algorithms that utilize these hash functions can also be considered secure, which ensures their applicability in future-proof cryptographic systems.
 
 \section{Digital Signature Algorithm (DSA)}
+
 The Stateless Hash-based Digital Signature Algorithm (SLH-DSA) is a cryptographic scheme that combines the strength of hash-based security with the simplicity and efficiency of a stateless design. SLH-DSA is a robust alternative to traditional digital signature algorithms, addressing challenges such as state management, accidental key reuse, and scalability in distributed or resource-constrained environments.
 \\
-At its core, SLH-DSA employs cryptographic hash functions to generate secure, verifiable signatures. Unlike stateful algorithms that require persistent tracking of used keys or states to ensure security, SLH-DSA eliminates this dependency by deriving keys and signatures dynamically in a manner that guarantees their uniqueness and integrity. This stateless approach significantly reduces the operational risks and complexities associated with managing and safeguarding state information.\\
+At its core, SLH-DSA employs cryptographic hash functions to generate secure, verifiable signatures. Unlike stateful algorithms that require persistent tracking of used keys to remain secure, SLH-DSA eliminates this dependency by deriving keys and signatures dynamically from the pseudorandom images of a hash function to guarantee uniqueness.
+This stateless approach significantly reduces the operational risks and complexities compared to stateful signature algorithms.
 \\
 The Algorithm can be divided into 4 Steps:
 \begin{enumerate}
@@ -80,11 +90,12 @@ The Algorithm can be divided into 4 Steps:
 	\item \textbf{Signature Generation} by sender
 	\item \textbf{Signature Verification} by receiver
 \end{enumerate}
+
 During the \textbf{Key Generation}, both a private key and a public key are created. The private key consists of two main components:
 the \texttt{SK.seed} which is a random seed used to generate all the secret values for the WOTS+ (Winternitz One-Time Signature Plus) and FORS (Forest of Random Subsets) keys and the \texttt{SK.prf}, a pseudorandom function (PRF) key used to generate a randomization value for the message hashing during signature generation.
 Additionally, the private key includes a copy of the public key components (PK.seed and PK.root) for use during signature generation and verification.
 \\
-The public key consists of the \texttt{PK.seed} which is a public seed used to provide domain separation between different SLH-DSA key pairs. It is also used in many hash function calls. The key also consists of the \texttt{PK.root} which is the root of the top-layer XMSS (eXtended Merkle Signature Scheme) tree, which also serves as the public key of the SLH-DSA hypertree.
+The public key consists of the \texttt{PK.seed} which is a public seed used to provide domain separation between different SLH-DSA key pairs. It is also used in many hash function calls. The key also consists of the \texttt{PK.root} which is the root of the top-layer XMSS tree, which also serves as the public key of the SLH-DSA hypertree.
 \\
 The key generation algorithm (\verb|slh_keygen_internal|) takes \texttt{SK.seed}, \texttt{SK.prf}, and \texttt{PK.seed} as inputs.
 It computes the root of the top-layer XMSS tree (\texttt{PK.root}) using the \verb|xmss/_node| function, which recursively constructs the Merkle tree from the WOTS+ public keys.
@@ -110,9 +121,7 @@ Using the FORS signature and the relevant portion of the message digest, the ver
 The candidate FORS public key is then verified using the hypertree signature. The hypertree signature consists of a sequence of XMSS signatures, starting from the bottom layer of the hypertree (which signs the FORS public key) and moving up to the top layer (which signs the XMSS public key of the layer below). Again, each signature is singed by a WOTS+ signature chain. The verifier uses the \verb|ht_verify| function to check each XMSS signature in the sequence. For each layer, the verifier reconstructs the corresponding XMSS public key using the \verb|xmss_pkFromSig| function and compares it to the expected value. This process continues until the top layer is reached.\\
 At the top layer of the hypertree, the verifier compares the computed XMSS public key to the \texttt{PK.root} from the signer's public key. If the two values match, the signature is considered valid. This confirms that the signature was generated using the signer's private key and that the message has not been altered. If the computed public key does not match \texttt{PK.root}, the signature is invalid, indicating either tampering with the message or an incorrect signature. \cite{national-institute-of-standards-and-technology-2024}\\
 \newline
-SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers enhanced security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
-\\
-This algorithm is a key step toward creating secure, efficient, and future-proof digital systems, making it a compelling choice for developers and security professionals seeking innovative cryptographic solutions.
+SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers robust security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
 
 % FIXME put this in the right place
 % FIXME check if this is correct
@@ -194,7 +203,7 @@ The SLH-DSA code is always compiled with the same compiler options, mainly \text
 \\
 For our tests, we generate a keypair, sign the message with the private key and validate the resulting signature with the public key using all 6 implemented parameter sets.
 This also explains the high clock cycle count, as each iteration consists of 6 key generations, 6 signature generations and 6 signature verifications.
-This process gets repeated 100 times, to obtain a suffieciently accurate performance average.
+This process gets repeated 100 times, to obtain a sufficiently accurate performance average.
 For all tests, the message to sign and the context string stay the same, while the keys are randomly generated.
 The results can be see in Table \ref{tab:cycles}, with the \texttt{kcp/optimized1600AVX512} implementation achieving a performance increase of 32.95\%.
 
@@ -217,7 +226,7 @@ The functions names for SHAKE256, prefixed with \texttt{KeccakP1600...} stem fro
 \begin{table}[ht]
 \centering
 \begin{tabular}{ r | l }
-    \textbf{\% of clock cycles} & \textbf{Function name} \\
+    \textbf{\% of Clock Cycles} & \textbf{Function Name} \\
     \hline
     85.93\% & \texttt{KeccakP1600\_Permute\_24rounds} \\
      6.30\% & \texttt{KeccakP1600\_AddBytes} \\

@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  14 FEB 2025 10:29
+This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  16 FEB 2025 14:50
  system commands enabled.
 **template.tex
 (./template.tex
@@ -859,41 +859,34 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 IACR@AUTHOR: Simon Hensel, Helena Richter
-IACR@TITLE: Stateless Hash-Based Digital Signature Standard
+IACR@TITLE: Stateless Hash-Based Digital Signature Algorithm
 
 [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
-Missing character: There is no — (U+2014) in font ec-lmr10!
-]
-Underfull \hbox (badness 10000) in paragraph at lines 72--77
-
- []
-
-
-Overfull \hbox (4.50558pt too wide) in paragraph at lines 83--116
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+Overfull \hbox (4.50558pt too wide) in paragraph at lines 94--125
 \T1/lmr/m/n/10 The key gen-er-a-tion al-go-rithm ([]\T1/lmtt/m/n/10 slh_keygen_i
 nternal\T1/lmr/m/n/10 ) takes \T1/lmtt/m/n/10 SK.seed\T1/lmr/m/n/10 , \T1/lmtt/
 m/n/10 SK.prf\T1/lmr/m/n/10 , and \T1/lmtt/m/n/10 PK.seed
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--116
+Underfull \hbox (badness 10000) in paragraph at lines 94--125
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--116
+Underfull \hbox (badness 10000) in paragraph at lines 94--125
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--116
+Underfull \hbox (badness 10000) in paragraph at lines 94--125
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 83--116
+Underfull \hbox (badness 10000) in paragraph at lines 94--125
 
  []
 
@@ -901,10 +894,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 83--116
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [3]
-Underfull \vbox (badness 4403) has occurred while \output is active []
-
- [4]
-[5] [6] (./template.bbl)
+[4] [5] [6] (./template.bbl)
 (/usr/share/texmf-dist/tex/generic/stringenc/se-pdfdoc.def
 File: se-pdfdoc.def 2019/11/29 v1.12 stringenc: PDFDocEncoding
 )
@@ -923,11 +913,11 @@ Package rerunfilecheck Info: File `template.out' has not changed.
 Here is how much of LuaTeX's memory you used:
  15998 strings out of 476447
  156265,1977958 words of node,token memory allocated
- 609 words of node memory still in use:
-   8 hlist, 2 vlist, 2 rule, 1 local_par, 6 glue, 5 kern, 1 penalty, 3 glyph, 10
- attribute, 59 glue_spec, 10 attribute_list, 1 write nodes
-   avail lists: 1:5,2:504,3:170,4:115,5:767,6:54,7:15380,8:21,9:348,10:17,11:128
-9,12:1
+ 620 words of node memory still in use:
+   8 hlist, 2 vlist, 2 rule, 1 local_par, 7 glue, 5 kern, 1 penalty, 3 glyph, 11
+ attribute, 59 glue_spec, 11 attribute_list, 1 write nodes
+   avail lists: 1:2,2:629,3:161,4:121,5:762,6:53,7:15458,8:21,9:365,10:17,11:129
+0,12:1
  37679 multiletter control sequences out of 65536+600000
  74 fonts using 4983343 bytes
  79i,11n,91p,1004b,532s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -945,7 +935,7 @@ lic/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></us
 r/share/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf-dist/fonts/
 type1/public/lm/lmtt10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt9.pf
 b>
-Output written on template.pdf (7 pages, 329218 bytes).
+Output written on template.pdf (7 pages, 330042 bytes).
 
 PDF statistics: 169 PDF objects out of 1000 (max. 8388607)
  63 compressed objects within 1 object stream
