@@ -1,4 +1,4 @@
-This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  16 FEB 2025 14:50
+This is LuaHBTeX, Version 1.18.0 (TeX Live 2024/Arch Linux)  (format=lualatex 2025.1.10)  18 FEB 2025 09:40
  system commands enabled.
 **template.tex
 (./template.tex
@@ -846,47 +846,40 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <6> on input line 42.
 LaTeX Font Info:    External font `lmex10' loaded for size
 (Font)              <9> on input line 42.
-
-
-Package lipsum Warning: Unknown language 'latin'. Hyphenation patterns for
-(lipsum)                'english' will be used instead.
-(lipsum)                
-(lipsum)                With LuaTeX, lipsum requires babel to get proper
-(lipsum)                hyphenation (you can use \usepackage[base]{babel}).
-
 Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmr' (encoding: TS1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
+
 IACR@AUTHOR: Simon Hensel, Helena Richter
 IACR@TITLE: Stateless Hash-Based Digital Signature Algorithm
 
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
-Overfull \hbox (4.50558pt too wide) in paragraph at lines 94--125
+Overfull \hbox (4.50558pt too wide) in paragraph at lines 98--129
 \T1/lmr/m/n/10 The key gen-er-a-tion al-go-rithm ([]\T1/lmtt/m/n/10 slh_keygen_i
 nternal\T1/lmr/m/n/10 ) takes \T1/lmtt/m/n/10 SK.seed\T1/lmr/m/n/10 , \T1/lmtt/
 m/n/10 SK.prf\T1/lmr/m/n/10 , and \T1/lmtt/m/n/10 PK.seed
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--125
+Underfull \hbox (badness 10000) in paragraph at lines 98--129
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--125
+Underfull \hbox (badness 10000) in paragraph at lines 98--129
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--125
+Underfull \hbox (badness 10000) in paragraph at lines 98--129
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 94--125
+Underfull \hbox (badness 10000) in paragraph at lines 98--129
 
  []
 
@@ -916,11 +909,11 @@ Here is how much of LuaTeX's memory you used:
  620 words of node memory still in use:
    8 hlist, 2 vlist, 2 rule, 1 local_par, 7 glue, 5 kern, 1 penalty, 3 glyph, 11
  attribute, 59 glue_spec, 11 attribute_list, 1 write nodes
-   avail lists: 1:2,2:629,3:161,4:121,5:762,6:53,7:15458,8:21,9:365,10:17,11:129
+   avail lists: 1:4,2:629,3:164,4:121,5:762,6:53,7:15458,8:21,9:365,10:17,11:129
 0,12:1
  37679 multiletter control sequences out of 65536+600000
  74 fonts using 4983343 bytes
- 79i,11n,91p,1004b,532s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 79i,11n,91p,1004b,508s stack positions out of 10000i,1000n,20000p,200000b,200000s
 {/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf-dist/fonts
 /enc/dvips/lm/lm-rm.enc}{/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathsy.enc}
 {/usr/share/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf-dist/f
@@ -935,7 +928,7 @@ lic/lm/lmssbx10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmsy10.pfb></us
 r/share/texmf-dist/fonts/type1/public/lm/lmsy7.pfb></usr/share/texmf-dist/fonts/
 type1/public/lm/lmtt10.pfb></usr/share/texmf-dist/fonts/type1/public/lm/lmtt9.pf
 b>
-Output written on template.pdf (7 pages, 330042 bytes).
+Output written on template.pdf (7 pages, 331311 bytes).
 
 PDF statistics: 169 PDF objects out of 1000 (max. 8388607)
  63 compressed objects within 1 object stream

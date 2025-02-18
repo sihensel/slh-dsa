@@ -47,7 +47,11 @@
 
 %%%% 6. ABSTRACT %%%%
 \begin{abstract}
-  \lipsum[1]
+  The Stateless Hash-Based Digital Signature Algorithms, short SLH-DSA, is a novel, quantum-resistant cryptographic algorithm that utilizes the inherent pseudorandomness of hash functions to create digital message signatures.
+  SLH-DSA improves on previous hash-based systems, such as XMSS, by removing the reliance on state information, which in turn eliminates vulnerabilities related to state management, such as key reuse.
+  This also makes the algorithm more suited to run in distributed environments, by allowing multiple signing operations to be run in parallel, as they are independent of each other.
+  In addition, smaller platforms also benefit from not having to store state information between runs, saving storage space.
+  In this paper, we describe the inner workings of SLH-DSA, as well as document our approach to implementing the algorithm in the languages Python and C.
 \end{abstract}
 
 
