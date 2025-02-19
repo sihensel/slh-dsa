@@ -13,7 +13,9 @@
 
 
 %%%% 2. PACKAGES %%%%
-\usepackage{lipsum} % Example package -- can be removed
+
+% increase row spacing in tables
+\renewcommand{\arraystretch}{1.1}
 
 
 %%%% 3. AUTHOR, INSTITUTE %%%%
@@ -58,12 +60,12 @@
 %%%% 7. PAPER CONTENT %%%%
 \section{Introduction}
 
-Data integrity and authenticity play a vital role in modern cryptography to enable secure communication and digital transactions.
-Digital Signature Algorithms (DSAs) enable users to validate the origin and integrity of data without the need for direct interaction.
-The Stateless Hash-based Digital Signature Algorithm (SLH-DSA) is a new DSA that aims to offer a robust and efficient cryptographic solution to ensure data integrity and authenticity, usable by secure, lightweight, and future-proof applications.
+Data integrity and authenticity play a vital role in modern cryptography to ensure the security of digital communication and transactions.
+Digital signature algorithms (DSAs) enable users to validate the origin and integrity of data without the need for direct interaction between the sender and the recipient.
+The Stateless Hash-based Digital Signature Algorithm (SLH-DSA) is a new digital signature algorithm that aims to offer a robust and efficient cryptographic solution to ensure data integrity and authenticity, usable in secure, lightweight, and future-proof applications.
 SLH-DSA is advanced algorithm designed to leverage the inherent strength of hash functions while eliminating challenges associated with stateful signature schemes, such as the eXtended Merkle Signature Scheme (XMSS).
-As such, SLH-DSA is not vulnerable to errors that can occur with stateful algorithms, such as accidental state reuse.
-Furthermore, statelessness also reduces the overall complexity of the algorithm, as state management does not have to be taken into account anymore, which also allows for a greater deal of parallelization when running the algorithm.
+As such, SLH-DSA is not vulnerable to errors that can occur with stateful algorithms, such as accidental key reuse or errors related to state memory.
+Furthermore, statelessness also reduces the overall complexity of the algorithm, as state management does not have to be taken into account at all, which not only allows for a greater deal of parallelization when running the algorithm, but also benefits smaller platforms, since the state does not have to be memorized between algorithm executions.
 \\
 In this document, we describe the theoretical foundations and inner workings of SLH-DSA, our understanding of the algorithm, how we implement it in the programming languages Python and C and which challenges and solution we encountered doing so.
 By implementing SLH-DSA, this project contributes to the advancement of quantum-resistant cryptographic applications to provide efficient solution to end users.
@@ -127,8 +129,6 @@ At the top layer of the hypertree, the verifier compares the computed XMSS publi
 \newline
 SLH-DSA is especially useful for modern applications where lightweight and scalable solutions are critical. It is resilient to common vulnerabilities found in stateful systems and offers robust security against evolving threats, including those posed by quantum computing. Furthermore, its reliance on well-studied cryptographic hash functions ensures that it remains a practical and secure choice for both current and future cryptographic needs.
 
-% FIXME put this in the right place
-% FIXME check if this is correct
 \subsection{Parameter Sets}
 
 SLH-DSA comes with different parameter sets that govern different aspects of the algorithm, including bit security and signature length.
@@ -147,7 +147,6 @@ After the Python protoype is confirmed to be working, we implement the algorithm
 With this approach, we can always make sure the C implementation is working as intended by comparing it with the Python protoype.
 For both implementations, we choose to use one dedicated file per chapter in the standard specification, so the code follows the overall structure of the specification paper.
 Note that only the parameter sets using SHAKE are implemented.
-% FIXME maybe we can cite the NIST github repo properly instead of only providing a footnote with a link
 Both implementations are tested with the official test vectors provided by the NIST on their official GitHub page \cite{usnistgov-2024}.
 
 
@@ -188,8 +187,7 @@ To further optimize performance, we use \texttt{x \& 1 == 0} instead of \texttt{
 Similarly, we replace multiplications and divisions by the power of 2 with bit shifts, so $x * 2^y$ is implemented as \texttt{x << y}, whereas $x / 2^y$ becomes \texttt{x >> y}.
 \\
 The pseudo-random hash functions are first implemented using the \texttt{libgcrypt} library, a cryptographic library readily available on most Linux systems.
-% FIXME cite SUPERCOP here
-In a second iteration, we replace SHA-256 from the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHA-256, which is part of the SUPERCOP cryptography benchmark system, to reduce the program's exeption time.
+In a second iteration, we replace SHA-256 from the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHA-256, which is part of the SUPERCOP cryptography benchmark system, to reduce the program's exeption time \cite{SUPERCOP-2024}.
 \texttt{kcp/optimized1600AVX512} is optimized for processors that support the AVX512 instruction set, which includes our development machines, which should provide a performce boost when executing the code on these platforms.
 Random numbers are generated using the cross-platform \texttt{sodium} library.
 \\
@@ -202,7 +200,7 @@ In addition, we replace header include guards with the simple macro \texttt{\#pr
 
 As mentioned above, in a later development iteration, we replace the \texttt{libgcrypt} library with the \texttt{kcp/optimized1600AVX512} implementation of SHAKE256 in hopes of increasing performance.
 In this section, we run some performance tests using both libraries to compare the two.
-To measure performance, we use the perf program \footnote{https://perfwiki.github.io/main/}, that is part of the Linux kernel to measure CPU cycles.
+To measure performance, we use the perf program, that is part of the Linux kernel, to measure CPU cycles \cite{perf-2024}.
 The SLH-DSA code is always compiled with the same compiler options, mainly \texttt{-O3} and \texttt{-march=skylake-avx512}.
 \\
 For our tests, we generate a keypair, sign the message with the private key and validate the resulting signature with the public key using all 6 implemented parameter sets.
@@ -225,7 +223,7 @@ The results can be see in Table \ref{tab:cycles}, with the \texttt{kcp/optimized
 \end{table}
 
 A vast majority of the algorithm's runtime is used on hashing, as can be seen in Table \ref{tab:perf}, which shows an excerpt of select functions and how many CPU cycles they take to complete during one test run.
-The functions names for SHAKE256, prefixed with \texttt{KeccakP1600...} stem from the \texttt{kcp/optimized1600AVX512} implementation, while the other functions names follow the pseudocode from the standard and are implemented by us.
+The functions names for SHAKE256, prefixed with \texttt{KeccakP1600...} stem from the \texttt{kcp/optimized1600AVX512} implementation, while the other functions names follow the pseudocode from the standard and are written by us.
 
 \begin{table}[ht]
 \centering
