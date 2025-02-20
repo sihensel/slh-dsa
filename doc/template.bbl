@@ -14,7 +14,8 @@ Linux Foundation.
 
 \bibitem[Jun24]{jungk-2024}
 Bernhard Jungk.
-\newblock {Post-Quantum Cryptography and Quantum Key Distribution}, 10 2024.
+\newblock {Post-Quantum Cryptography and Quantum Key Distribution (lecture
+  slides)}, 10 2024.
 
 \bibitem[oST24a]{usnistgov-2024}
 National~Institute of~Standards and Technology.
@@ -25,7 +26,8 @@ National~Institute of~Standards and Technology.
 \newblock {Stateless Hash-Based Digital Signature Standard}.
 \newblock Technical Report NIST.FIPS.205, 8 2024.
 
-\bibitem[unk25]{unknown-author-2025}
-{Stateful vs stateless applications}, 1 2025.
+\bibitem[Red25]{unknown-author-2025}
+RedHat.
+\newblock {Stateful vs stateless applications}, 1 2025.
 
 \end{thebibliography}

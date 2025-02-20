@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (MiKTeX 22.7) (preloaded format=pdflatex 2022.7.28)  19 FEB 2025 17:56
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (MiKTeX 22.7) (preloaded format=pdflatex 2022.7.28)  20 FEB 2025 15:10
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -828,11 +828,11 @@ Package rerunfilecheck Info: File `template.out' has not changed.
 (rerunfilecheck)             Checksum: 1E37E49E708DFFB41AEB2CE5D320834E;1150.
  ) 
 Here is how much of TeX's memory you used:
- 15505 strings out of 478338
- 244779 string characters out of 2848425
- 628636 words of memory out of 3000000
+ 15503 strings out of 478338
+ 244757 string characters out of 2848425
+ 628643 words of memory out of 3000000
  33436 multiletter control sequences out of 15000+600000
- 556844 words of font info for 177 fonts, out of 8000000 for 9000
+ 556761 words of font info for 176 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  75i,11n,93p,1007b,611s stack positions out of 10000i,1000n,20000p,200000b,80000s
 {Z:/Programme/Miktex/fonts/enc/dvips/lm/lm-rm.enc}{Z:/Programme/Miktex/fonts/
@@ -848,7 +848,7 @@ type1/public/lm/lmr9.pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmssbx10.pf
 b><Z:/Programme/Miktex/fonts/type1/public/lm/lmsy10.pfb><Z:/Programme/Miktex/fo
 nts/type1/public/lm/lmsy7.pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmtt10
 .pfb><Z:/Programme/Miktex/fonts/type1/public/lm/lmtt9.pfb>
-Output written on template.pdf (8 pages, 345613 bytes).
+Output written on template.pdf (8 pages, 345639 bytes).
 PDF statistics:
  193 PDF objects out of 1000 (max. 8388607)
  32 named destinations out of 1000 (max. 500000)
